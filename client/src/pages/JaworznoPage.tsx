@@ -11,50 +11,50 @@ export default function JaworznoPage() {
   return (
     <div className="space-y-12 py-4 text-left">
       {/* Hero Section */}
-      <section className="relative rounded-[32px] p-6 sm:p-10 md:p-12 border border-white/10 bg-gradient-to-b from-slate-900/90 via-slate-950/80 to-black/90 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden">
+      <section className="relative rounded-[24px] sm:rounded-[32px] p-5 sm:p-10 md:p-12 border border-white/10 bg-slate-950/90 md:bg-gradient-to-b md:from-slate-900/90 md:via-slate-950/80 md:to-black/90 backdrop-blur-md md:backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black tracking-widest uppercase">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] sm:text-xs font-black tracking-widest uppercase">
               <Sparkles className="w-3.5 h-3.5" /> Centrum Jaworzno • {jaworzno.mall}
             </div>
 
-            <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-none">
+            <h1 className="text-3xl sm:text-6xl font-black uppercase tracking-tight leading-none">
               Grawitacja <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-rose-400 via-red-500 to-amber-500">
                 Jaworzno
               </span>
             </h1>
 
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl font-medium">
+            <p className="text-slate-300 text-xs sm:text-base leading-relaxed max-w-xl font-medium">
               {jaworzno.desc}
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 sm:pt-2">
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tory Kręglarskie</span>
-                <span className="text-lg font-black text-white">{jaworzno.uvLanes || jaworzno.lanes}</span>
+                <span className="text-base sm:text-lg font-black text-white">{jaworzno.uvLanes || jaworzno.lanes}</span>
               </div>
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Strefa Rozrywki</span>
-                <span className="text-lg font-black text-white">{jaworzno.zones}</span>
+                <span className="text-base sm:text-lg font-black text-white">{jaworzno.zones}</span>
               </div>
               <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md col-span-2 sm:col-span-1">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Telefon</span>
-                <span className="text-sm font-black text-rose-400">{jaworzno.phone}</span>
+                <span className="text-xs sm:text-sm font-black text-rose-400">{jaworzno.phone}</span>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-4">
-              <button className="px-8 py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-rose-500 via-red-600 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 shadow-[0_0_30px_rgba(244,63,94,0.5)] flex items-center gap-2 cursor-pointer">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4">
+              <button className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-rose-500 via-red-600 to-rose-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 shadow-[0_0_25px_rgba(244,63,94,0.5)] flex items-center gap-2 cursor-pointer active:scale-98">
                 <span>Zarezerwuj Tor</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
 
               <a
                 href={`tel:${jaworzno.phoneClean}`}
-                className="px-6 py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto justify-center px-6 py-3.5 sm:py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2 active:scale-98"
               >
                 <Phone className="w-4 h-4 text-rose-400" />
                 <span>Zadzwoń</span>

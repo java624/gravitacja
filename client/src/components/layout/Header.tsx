@@ -19,13 +19,13 @@ export default function Header({ selectedCity, onSelectCity }: HeaderProps) {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
 
       {/* Головний контейнер Хедера */}
-      <div className="relative rounded-[28px] p-3 md:px-8 md:py-4 border border-white/10 bg-gradient-to-b from-slate-900/80 via-slate-950/70 to-black/90 backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex justify-between items-center overflow-hidden">
+      <div className="relative rounded-[24px] sm:rounded-[28px] p-3 md:px-8 md:py-4 border border-white/10 bg-slate-950/90 md:bg-gradient-to-b md:from-slate-900/80 md:via-slate-950/70 md:to-black/90 backdrop-blur-xl md:backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex justify-between items-center overflow-hidden">
         
-        {/* Spotlight scan effect */}
+        {/* Spotlight scan effect (Desktop only) */}
         <motion.div
           animate={{ x: ['-100%', '250%'] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-orange-500/10 to-transparent skew-x-12 pointer-events-none z-0"
+          className="hidden md:block absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-orange-500/10 to-transparent skew-x-12 pointer-events-none z-0"
         />
 
         {/* Логотип (Клік повертає на головну) */}

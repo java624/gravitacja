@@ -24,7 +24,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020308] text-white flex flex-col justify-between relative overflow-hidden font-sans selection:bg-cyan-500 selection:text-black cursor-none">
+    <div className="min-h-screen bg-[#020308] text-white flex flex-col justify-between relative overflow-x-hidden font-sans selection:bg-cyan-500 selection:text-black md:cursor-none">
       {/* Dynamic WebGL & Ambient Neon Backdrop */}
       <BackgroundGlow />
 

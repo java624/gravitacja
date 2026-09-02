@@ -2,24 +2,33 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 export default function CustomCursor() {
+  const [enabled, setEnabled] = useState(false);
   const [pos, setPos] = useState({ x: -100, y: -100 });
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
+    // Only enable on desktop pointer devices
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 768;
+    if (!isFinePointer) return;
+
+    setEnabled(true);
+
     const handleMove = (e: MouseEvent) => {
       setPos({ x: e.clientX, y: e.clientY });
 
       const target = e.target as HTMLElement;
-      if (target.closest('button') || target.closest('.cursor-pointer')) {
+      if (target && (target.closest('button') || target.closest('a') || target.closest('.cursor-pointer'))) {
         setIsHovered(true);
       } else {
         setIsHovered(false);
       }
     };
 
-    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mousemove', handleMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMove);
   }, []);
+
+  if (!enabled) return null;
 
   return (
     <>
