@@ -36,6 +36,10 @@ export default function TiltCard({ loc, onSelect }: TiltCardProps) {
   const mouseXPos = useTransform(mouseXSpring, [-0.5, 0.5], ['0%', '100%']);
   const mouseYPos = useTransform(mouseYSpring, [-0.5, 0.5], ['0%', '100%']);
   const shineAngle = useTransform(mouseXSpring, [-0.5, 0.5], ['-20deg', '20deg']);
+  const radialGlowBg = useTransform(
+    [mouseXPos, mouseYPos],
+    ([px, py]) => `radial-gradient(480px circle at ${px} ${py}, rgba(168,85,247,0.2), transparent 80%)`
+  );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMobile || !cardRef.current) return;
@@ -100,12 +104,7 @@ export default function TiltCard({ loc, onSelect }: TiltCardProps) {
         {!isMobile && (
           <motion.div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-3xl z-0"
-            style={{
-              background: useTransform(
-                [mouseXPos, mouseYPos],
-                ([px, py]) => `radial-gradient(480px circle at ${px} ${py}, rgba(168,85,247,0.2), transparent 80%)`,
-              ),
-            }}
+            style={{ background: radialGlowBg }}
           />
         )}
 
