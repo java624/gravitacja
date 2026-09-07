@@ -2,7 +2,11 @@ import { Sparkles, ArrowUpRight, Phone } from 'lucide-react';
 import { LOCATIONS_DATA } from '../../data/locationsData';
 import KatowiceInfoCard from './KatowiceInfoCard';
 
-export default function KatowiceHero() {
+interface KatowiceHeroProps {
+  onOpenBooking?: (location?: string, resourceType?: 'bowling' | 'billiards') => void;
+}
+
+export default function KatowiceHero({ onOpenBooking }: KatowiceHeroProps) {
   const katowice = LOCATIONS_DATA.find((l) => l.id === 'katowice') || LOCATIONS_DATA[1];
 
   return (
@@ -44,7 +48,10 @@ export default function KatowiceHero() {
           </div>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4">
-            <button className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 via-red-600 to-orange-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 shadow-[0_0_25px_rgba(249,115,22,0.5)] flex items-center gap-2 cursor-pointer active:scale-98">
+            <button 
+              onClick={() => onOpenBooking?.('katowice', 'bowling')}
+              className="w-full sm:w-auto justify-center px-8 py-3.5 sm:py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 via-red-600 to-orange-500 bg-[length:200%_auto] hover:bg-right transition-all duration-500 shadow-[0_0_25px_rgba(249,115,22,0.5)] flex items-center gap-2 cursor-pointer active:scale-98"
+            >
               <span>Zarezerwuj Tor</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>

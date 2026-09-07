@@ -11,19 +11,19 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: 'Nasze lokale',
     icon: 'MapPin',
     items: [
-      { title: 'Jaworzno', subtitle: 'Galeria Galena', href: '#' },
-      { title: 'Katowice', subtitle: 'Punkt 44', href: '#' },
-      { title: 'Poznań', subtitle: 'Posnania', href: '#' },
+      { title: 'Jaworzno', subtitle: 'Galeria Galena', href: '/jaworzno' },
+      { title: 'Katowice', subtitle: 'Punkt 44', href: '/katowice' },
+      { title: 'Poznań', subtitle: 'Posnania', href: '/poznan' },
     ],
   },
   {
     title: 'Informacje',
     icon: 'ShieldCheck',
     items: [
-      { title: 'O nas', href: '#' },
+      { title: 'O nas', href: '/' },
       { title: 'Polityka prywatności', href: '#' },
       { title: 'Regulamin lokalu', href: '#' },
-      { title: 'Kontakt & Rezerwacje', href: '#' },
+      { title: 'Kontakt & Rezerwacje', href: '/kontakt' },
     ],
   },
   {
@@ -32,8 +32,9 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     items: [
       { title: 'Poradnik gry w kręgle', href: '#' },
       { title: 'Poradnik gry w bilard', href: '#' },
-      { title: 'Cennik & Promocje', href: '#' },
-      { title: 'Imprezy firmowe', href: '#' },
+      { title: 'Cennik & Promocje', href: '/cennik' },
+      { title: 'Imprezy firmowe', href: '/firmy' },
+      { title: 'Urodziny dla dzieci', href: '/dzieci' },
     ],
   },
 ];

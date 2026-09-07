@@ -20,6 +20,9 @@ export interface LocationItem {
   phone: string;
   phoneClean: string;
   hours: OpeningHour[];
+  topBarTitle?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
 }
 
 export interface Promotion {

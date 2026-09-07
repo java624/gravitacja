@@ -1,12 +1,15 @@
-import { ChevronRight, MapPin, ShieldCheck, Gamepad2, Clock, Sparkles } from 'lucide-react';
+import { ChevronRight, MapPin, ShieldCheck, Gamepad2, Clock, Sparkles, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Logo from '../ui/Logo';
 import { FOOTER_SECTIONS } from '../../data/navigationData';
 
 interface FooterProps {
   onSelectCity?: (id: string) => void;
+  onOpenAdminAuth?: () => void;
 }
 
-export default function Footer({ onSelectCity }: FooterProps) {
+export default function Footer({ onSelectCity, onOpenAdminAuth }: FooterProps) {
+  const navigate = useNavigate();
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'MapPin':
@@ -22,12 +25,12 @@ export default function Footer({ onSelectCity }: FooterProps) {
 
   return (
     <footer className="relative z-10 w-full border-t border-white/10 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black pt-16 pb-10 px-4 sm:px-6 overflow-hidden">
-      {/* Фонова неонова підсвітка */}
+      {/* Ambient Glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-40 bg-gradient-to-r from-orange-600/10 via-red-600/15 to-purple-600/10 blur-3xl pointer-events-none rounded-full" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Верхній блок: Логотип + Статус */}
+        {/* Top Header Row */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-10 border-b border-white/10 gap-6">
           <div className="space-y-3">
             <Logo size="md" />
@@ -45,7 +48,7 @@ export default function Footer({ onSelectCity }: FooterProps) {
           </div>
         </div>
 
-        {/* Навігаційна сітка (4 колонки) */}
+        {/* 4 Navigation Columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 text-sm text-slate-400 text-left py-12">
           
           {FOOTER_SECTIONS.map((section) => (
@@ -61,9 +64,11 @@ export default function Footer({ onSelectCity }: FooterProps) {
                       onClick={() => {
                         if (onSelectCity && (item.title === 'Jaworzno' || item.title === 'Katowice' || item.title === 'Poznań')) {
                           onSelectCity(item.title.toLowerCase());
+                        } else if (item.href && item.href.startsWith('/')) {
+                          navigate(item.href);
                         }
                       }}
-                      className="w-full flex items-center justify-between group p-2 rounded-xl bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-orange-500/30 transition-all duration-300 text-left"
+                      className="w-full flex items-center justify-between group p-2 rounded-xl bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-orange-500/30 transition-all duration-300 text-left cursor-pointer"
                     >
                       <div className="flex flex-col">
                         <span className="text-slate-200 group-hover:text-orange-400 font-bold transition-colors">{item.title}</span>
@@ -77,7 +82,7 @@ export default function Footer({ onSelectCity }: FooterProps) {
             </div>
           ))}
 
-          {/* Секція 4: Godziny otwarcia */}
+          {/* Column 4: Opening hours */}
           <div className="space-y-4">
             <h4 className="text-white font-black uppercase tracking-widest text-xs flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-400" />
@@ -101,12 +106,26 @@ export default function Footer({ onSelectCity }: FooterProps) {
 
         </div>
 
-        {/* Нижній блок з копірайтом */}
+        {/* Bottom copyright row with employee access trigger */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>© 2026 Centrum Rozrywki Gravitacja. Wszystkie prawa zastrzeżone.</p>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-            <span>Nowoczesna rozrywka w Twoim mieście</span>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+              <span>Nowoczesna rozrywka w Twoim mieście</span>
+            </div>
+
+            {onOpenAdminAuth && (
+              <button
+                onClick={onOpenAdminAuth}
+                className="text-[10px] text-slate-600 hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-2"
+                title="Dostęp tylko dla pracowników"
+              >
+                <Lock className="w-3 h-3" />
+                <span>Strefa Pracownika</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
