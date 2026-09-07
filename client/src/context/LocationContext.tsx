@@ -37,20 +37,24 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       if (stored === 'katowice' || stored === 'jaworzno' || stored === 'poznan') {
         return stored as LocationSlug;
       }
-    } catch (e) {
+    } catch {
       // localStorage read fallback
     }
-    return 'katowice';
+    return null;
   });
 
   const setActiveSlug = (slug: LocationSlug | null) => {
     setActiveSlugState(slug);
-    if (slug) {
-      try {
+    try {
+      if (slug) {
         localStorage.setItem(STORAGE_KEY, slug);
-      } catch (e) {
-        // localStorage write error fallback
+      } else {
+        // Clearing the selection must remove the persisted location — this is
+        // what returns the user to the "pick a city" state on the landing page.
+        localStorage.removeItem(STORAGE_KEY);
       }
+    } catch {
+      // localStorage write/remove error fallback
     }
   };
 

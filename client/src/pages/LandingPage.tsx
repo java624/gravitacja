@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HomeHero from '../components/home/HomeHero';
 import LocationSelector from '../components/home/LocationSelector';
@@ -7,6 +8,11 @@ import { useLocationContext, type LocationSlug } from '../context/LocationContex
 export default function LandingPage() {
   const navigate = useNavigate();
   const { setActiveSlug } = useLocationContext();
+
+  useEffect(() => {
+    setActiveSlug(null);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [setActiveSlug]);
 
   const handleSelectCity = (id: string) => {
     const slug = id as LocationSlug;
