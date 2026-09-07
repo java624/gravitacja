@@ -73,7 +73,7 @@ export default function MenuSection({ locationSlug = 'katowice' }: MenuSectionPr
         <div>
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[10px] sm:text-xs font-black tracking-widest uppercase mb-3 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
             <Utensils className="w-3.5 h-3.5 text-orange-400" />
-            <span>Gastro & Bar Menu • Katowice</span>
+            <span>Gastro & Bar Menu • Grawitacja</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
             Nasza <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-amber-300 to-red-400">Oferta Menu</span>
@@ -130,10 +130,12 @@ export default function MenuSection({ locationSlug = 'katowice' }: MenuSectionPr
           <p className="text-xs uppercase font-bold tracking-wider">Ładowanie pozycji menu...</p>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="py-16 text-center text-slate-400 rounded-3xl bg-white/5 border border-white/10 p-8 space-y-2">
+        <div className="py-12 text-center text-slate-400 rounded-3xl bg-white/5 border border-white/10 p-8 space-y-3">
           <AlertCircle className="w-8 h-8 text-orange-400 mx-auto" />
-          <h4 className="text-sm font-bold uppercase text-white">Brak wyników wyszukiwania</h4>
-          <p className="text-xs">Nie znaleziono pozycji pasujących do frazy "{searchQuery}".</p>
+          <h4 className="text-sm font-bold uppercase text-white">Menu Gastro dla tego lokalu</h4>
+          <p className="text-xs max-w-md mx-auto">
+            Pełne menu dań, przekąsek i koktajli serwowane jest bezpośrednio przy barze w obiekcie.
+          </p>
         </div>
       ) : (
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
