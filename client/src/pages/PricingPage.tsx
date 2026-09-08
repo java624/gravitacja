@@ -39,12 +39,12 @@ export default function PricingPage() {
             Cennik Usług <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-purple-500">{currentLocation.name}</span>
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-medium">
-            Sprawdź aktualny cennik gry w kręgle oraz bilard w centrum rozrywki Grawitacja {currentLocation.name} ({currentLocation.mall}).
+            Sprawdź aktualny cennik gry w kręgle oraz bilard{validSlug === 'jaworzno' ? ' i dart' : validSlug === 'poznan' ? ' i karaoke' : ''} w centrum rozrywki Grawitacja {currentLocation.name} ({currentLocation.mall}).
           </p>
         </div>
       </div>
 
-      <LaneDivider label={`CENNIK BOWLING & BILARD • ${currentLocation.name.toUpperCase()}`} badge="CENNIK" />
+      <LaneDivider label={`CENNIK BOWLING & BILARD${validSlug === 'jaworzno' ? ' & DART' : validSlug === 'poznan' ? ' & KARAOKE' : ''} • ${currentLocation.name.toUpperCase()}`} badge="CENNIK" />
 
       {/* Main Pricing Table */}
       <LocationPricing locationSlug={validSlug} />

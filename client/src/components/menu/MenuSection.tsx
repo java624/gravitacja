@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, Star, Pizza, Utensils, GlassWater, Beer, Wine, AlertCircle } from 'lucide-react';
 import { fetchMenuItems, type MenuItem } from '../../lib/supabase/menuService';
+import MenuItemImage from './MenuItemImage';
 
 interface MenuSectionProps {
   locationSlug?: string;
@@ -156,6 +157,11 @@ export default function MenuSection({ locationSlug = 'katowice' }: MenuSectionPr
               >
                 {/* Background Glow */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+
+                {/* Product Photo (real image, unified style) with neon SVG fallback */}
+                <div className={`mb-4 rounded-2xl overflow-hidden border border-white/10 ${item.is_available ? '' : 'grayscale opacity-70'}`}>
+                  <MenuItemImage item={item} />
+                </div>
 
                 <div>
                   {/* Top Badges */}

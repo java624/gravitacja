@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star } from 'lucide-react';
+import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star, Target, Phone, Mic2 } from 'lucide-react';
 import { PRICING_DATA, type LocationPricing as LocationPricingType, type PricingCategoryData } from '../../data/pricingData';
 import { useLocationContext, type LocationSlug } from '../../context/LocationContext';
 
@@ -9,15 +9,26 @@ interface LocationPricingProps {
 }
 
 export default function LocationPricing({ locationSlug }: LocationPricingProps) {
-  const { activeSlug, openBooking } = useLocationContext();
+  const { activeSlug, activeLocation, openBooking } = useLocationContext();
   const slug = locationSlug || activeSlug || 'katowice';
   const pricingData: LocationPricingType = PRICING_DATA[slug] || PRICING_DATA.katowice;
 
-  const [activeTab, setActiveTab] = useState<'bowling' | 'billiards'>('bowling');
-  const activeCategory: PricingCategoryData = pricingData.categories[activeTab];
+  const [activeTab, setActiveTab] = useState<'bowling' | 'billiards' | 'dart' | 'karaoke'>('bowling');
+  const hasDart = Boolean(pricingData.categories.dart);
+  const hasKaraoke = Boolean(pricingData.categories.karaoke);
+  // Optional categories are only present on one location (dart → Jaworzno,
+  // karaoke → Poznań), so selectors that refer to them fall back to bowling
+  // safely whenever they are absent.
+  const effectiveTab: 'bowling' | 'billiards' | 'dart' | 'karaoke' =
+    (activeTab === 'dart' && !hasDart) || (activeTab === 'karaoke' && !hasKaraoke)
+      ? 'bowling'
+      : activeTab;
+  const activeCategory: PricingCategoryData =
+    pricingData.categories[effectiveTab] || pricingData.categories.bowling;
 
   const handleBooking = () => {
-    openBooking(slug, activeTab);
+    if (effectiveTab === 'dart' || effectiveTab === 'karaoke') return;
+    openBooking(slug, effectiveTab);
   };
 
   return (
@@ -30,7 +41,13 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
             <span>Cennik Usług • Grawitacja {pricingData.locationName}</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            Aktualny <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-purple-500">Cennik Gier</span>
+            {pricingData.pageTitle ? (
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-purple-500">
+                {pricingData.pageTitle}
+              </span>
+            ) : (
+              <>Aktualny <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-purple-500">Cennik Gier</span></>
+            )}
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-md leading-relaxed">
@@ -74,6 +91,46 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
             <Gamepad2 className="w-4 h-4 relative z-10 text-purple-300" />
             <span className="relative z-10 drop-shadow">Bilard</span>
           </button>
+
+          {/* Dart tab — rendered only for locations that offer it (Jaworzno) */}
+          {hasDart && (
+            <button
+              onClick={() => setActiveTab('dart')}
+              className={`relative flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl text-xs sm:text-sm font-black tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                activeTab === 'dart' ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {activeTab === 'dart' && (
+                <motion.div
+                  layoutId="activePricingTabGen"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-lime-500 via-emerald-600 to-cyan-500 shadow-[0_0_25px_rgba(132,204,22,0.5),0_0_15px_rgba(16,185,129,0.4)]"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <Target className="w-4 h-4 relative z-10 text-lime-300" />
+              <span className="relative z-10 drop-shadow">Dart</span>
+            </button>
+          )}
+
+          {/* Karaoke tab — rendered only for locations that offer it (Poznań) */}
+          {hasKaraoke && (
+            <button
+              onClick={() => setActiveTab('karaoke')}
+              className={`relative flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl text-xs sm:text-sm font-black tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                activeTab === 'karaoke' ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {activeTab === 'karaoke' && (
+                <motion.div
+                  layoutId="activePricingTabGen"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-purple-600 shadow-[0_0_25px_rgba(217,70,239,0.55),0_0_15px_rgba(192,38,211,0.4)]"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <Mic2 className="w-4 h-4 relative z-10 text-fuchsia-300" />
+              <span className="relative z-10 drop-shadow">Karaoke</span>
+            </button>
+          )}
         </div>
 
         <div className="text-xs text-slate-400 font-semibold flex items-center gap-2">
@@ -85,13 +142,91 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
       {/* Pricing Cards Grid */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${slug}-${activeTab}`}
+          key={`${slug}-${effectiveTab}`}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
           transition={{ duration: 0.3 }}
           className="space-y-6"
         >
+          {effectiveTab === 'dart' ? (
+            /* Dart: single flat price, no day/time split needed */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl">
+              {activeCategory.pricing.map((slot, idx) => (
+                <motion.div
+                  key={slot.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.08 }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className="relative rounded-3xl p-6 bg-slate-950/80 border border-lime-500/25 hover:border-lime-400/60 backdrop-blur-xl transition-all duration-500 group flex items-center justify-between gap-4 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_0_35px_rgba(132,204,22,0.35)]"
+                >
+                  <div className="absolute -top-10 -right-10 w-36 h-36 bg-lime-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-lime-500/20 transition-colors" />
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-lime-500/20 border border-lime-500/40 text-lime-300 flex items-center justify-center shadow-[0_0_18px_rgba(132,204,22,0.35)] group-hover:scale-110 transition-transform">
+                      <Target className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black tracking-widest uppercase text-slate-400 block mb-1">
+                        {slot.dayShort}
+                      </span>
+                      <h3 className="text-base font-black uppercase text-white group-hover:text-lime-300 transition-colors">
+                        {slot.dayLabel}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 relative z-10">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-lime-300 block mb-1">
+                      1 godzina gry
+                    </span>
+                    <span className="text-4xl font-black bg-gradient-to-r from-lime-400 to-emerald-400 bg-clip-text text-transparent drop-shadow">
+                      {slot.before17} <span className="text-base font-bold text-lime-300">zł</span>
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : effectiveTab === 'karaoke' ? (
+            /* Karaoke: flat hourly rate (no do/po 17:00 split needed) */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl">
+              {activeCategory.pricing.map((slot, idx) => {
+                const Icon = idx === 0 ? Mic2 : Star;
+                return (
+                  <motion.div
+                    key={slot.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: idx * 0.08 }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    className="relative rounded-3xl p-6 bg-slate-950/80 border border-fuchsia-500/25 hover:border-fuchsia-400/60 backdrop-blur-xl transition-all duration-500 group flex items-center justify-between gap-4 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:shadow-[0_0_35px_rgba(217,70,239,0.35)]"
+                  >
+                    <div className="absolute -top-10 -right-10 w-36 h-36 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-fuchsia-500/20 transition-colors" />
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-300 flex items-center justify-center shadow-[0_0_18px_rgba(217,70,239,0.35)] group-hover:scale-110 transition-transform">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black tracking-widest uppercase text-slate-400 block mb-1">
+                          {slot.dayShort}
+                        </span>
+                        <h3 className="text-base font-black uppercase text-white group-hover:text-fuchsia-300 transition-colors">
+                          {slot.dayLabel}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 relative z-10">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-fuchsia-300 block mb-1">
+                        1 godzina
+                      </span>
+                      <span className="text-4xl font-black bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent drop-shadow">
+                        {slot.before17} <span className="text-base font-bold text-fuchsia-300">zł</span>
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {activeCategory.pricing.map((slot, idx) => (
               <motion.div
@@ -166,6 +301,7 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
               </motion.div>
             ))}
           </div>
+          )}
 
           <div className="rounded-3xl p-5 sm:p-6 bg-gradient-to-r from-purple-950/40 via-slate-950/90 to-orange-950/30 border border-purple-500/30 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(168,85,247,0.15)]">
             <div className="flex items-start gap-3.5">
@@ -182,13 +318,31 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
               </div>
             </div>
 
-            <button
-              onClick={handleBooking}
-              className="w-full sm:w-auto shrink-0 px-8 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 via-red-600 to-purple-600 hover:from-orange-400 hover:via-red-500 hover:to-purple-500 shadow-[0_0_25px_rgba(249,115,22,0.5),0_0_15px_rgba(168,85,247,0.4)] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              <span>Zarezerwuj teraz ({activeCategory.title})</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
+            {effectiveTab === 'dart' ? (
+              <a
+                href={`tel:${activeLocation?.phoneClean || '327626000'}`}
+                className="w-full sm:w-auto shrink-0 px-8 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-lime-600 via-emerald-600 to-cyan-600 hover:from-lime-500 hover:via-emerald-500 hover:to-cyan-500 shadow-[0_0_25px_rgba(132,204,22,0.45),0_0_15px_rgba(16,185,129,0.35)] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Zadzwoń i zarezerwuj stół do darta</span>
+              </a>
+            ) : effectiveTab === 'karaoke' ? (
+              <a
+                href={`tel:${activeLocation?.phoneClean || '616463000'}`}
+                className="w-full sm:w-auto shrink-0 px-8 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-fuchsia-600 via-pink-600 to-purple-600 hover:from-fuchsia-500 hover:via-pink-500 hover:to-purple-500 shadow-[0_0_25px_rgba(217,70,239,0.5),0_0_15px_rgba(192,38,211,0.4)] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <Mic2 className="w-4 h-4" />
+                <span>Zadzwoń i zarezerwuj salę karaoke</span>
+              </a>
+            ) : (
+              <button
+                onClick={handleBooking}
+                className="w-full sm:w-auto shrink-0 px-8 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 via-red-600 to-purple-600 hover:from-orange-400 hover:via-red-500 hover:to-purple-500 shadow-[0_0_25px_rgba(249,115,22,0.5),0_0_15px_rgba(168,85,247,0.4)] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <span>Zarezerwuj teraz ({activeCategory.title})</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>

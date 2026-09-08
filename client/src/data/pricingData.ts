@@ -8,7 +8,7 @@ export interface PriceSlot {
 }
 
 export interface PricingCategoryData {
-  id: 'bowling' | 'billiards';
+  id: 'bowling' | 'billiards' | 'dart' | 'karaoke';
   title: string;
   subtitle: string;
   unitText: string;
@@ -19,9 +19,15 @@ export interface PricingCategoryData {
 export interface LocationPricing {
   locationId: string;
   locationName: string;
+  /** Optional heading override shown on the pricing section (e.g. Jaworzno). */
+  pageTitle?: string;
   categories: {
     bowling: PricingCategoryData;
     billiards: PricingCategoryData;
+    /** Only locations offering darts have this category (currently Jaworzno). */
+    dart?: PricingCategoryData;
+    /** Only locations offering karaoke have this category (currently Poznań). */
+    karaoke?: PricingCategoryData;
   };
 }
 
@@ -112,43 +118,37 @@ export const PRICING_DATA: Record<string, LocationPricing> = {
   jaworzno: {
     locationId: 'jaworzno',
     locationName: 'Jaworzno',
+    pageTitle: 'Aktualne Ceny Kręgli i Bilarda',
     categories: {
       bowling: {
         id: 'bowling',
         title: 'Kręgle',
         subtitle: '8 torów UV • Galeria Galena',
         unitText: 'za 1 godz. gry na 1 torze',
-        extraNote: 'Podane ceny dotyczą 1 godziny gry na 1 torze. Obuwie w cenie gry.',
+        extraNote: 'Podane ceny dotyczą 1 godziny gry na 1 torze. Wypożyczenie obuwia do gry: 3 zł za parę.',
         pricing: [
           {
             id: 'mon-thu',
             dayLabel: 'Poniedziałek – Czwartek',
             dayShort: 'Pn - Czw',
-            before17: 89,
+            before17: 109,
             after17: 119,
           },
           {
             id: 'fri',
             dayLabel: 'Piątek',
             dayShort: 'Pt',
-            before17: 109,
+            before17: 119,
             after17: 159,
             isPopular: true,
           },
           {
-            id: 'sat-holidays',
-            dayLabel: 'Sobota i Święta',
-            dayShort: 'Sob i Święta',
-            before17: 139,
-            after17: 169,
-            isPopular: true,
-          },
-          {
-            id: 'sun',
-            dayLabel: 'Niedziela',
-            dayShort: 'Ndz',
-            before17: 139,
+            id: 'weekend',
+            dayLabel: 'Sobota, Niedziela i Święta',
+            dayShort: 'Sob - Nd i Św',
+            before17: 149,
             after17: 159,
+            isPopular: true,
           },
         ],
       },
@@ -163,30 +163,39 @@ export const PRICING_DATA: Record<string, LocationPricing> = {
             id: 'mon-thu',
             dayLabel: 'Poniedziałek – Czwartek',
             dayShort: 'Pn - Czw',
-            before17: 22,
-            after17: 28,
+            before17: 25,
+            after17: 30,
           },
           {
             id: 'fri',
             dayLabel: 'Piątek',
             dayShort: 'Pt',
-            before17: 22,
-            after17: 32,
+            before17: 25,
+            after17: 35,
           },
           {
-            id: 'sat-holidays',
-            dayLabel: 'Sobota i Święta',
-            dayShort: 'Sob i Święta',
-            before17: 28,
-            after17: 32,
+            id: 'weekend',
+            dayLabel: 'Sobota, Niedziela i Święta',
+            dayShort: 'Sob - Nd i Św',
+            before17: 30,
+            after17: 35,
             isPopular: true,
           },
+        ],
+      },
+      dart: {
+        id: 'dart',
+        title: 'Dart',
+        subtitle: 'Strefa dartowa • rzutki',
+        unitText: 'za 1 godz. gry',
+        extraNote: 'Podane ceny dotyczą 1 godziny gry w dart.',
+        pricing: [
           {
-            id: 'sun',
-            dayLabel: 'Niedziela',
-            dayShort: 'Ndz',
-            before17: 28,
-            after17: 28,
+            id: 'all-week',
+            dayLabel: 'Poniedziałek – Niedziela i Święta',
+            dayShort: 'Pn - Nd i Św',
+            before17: 30,
+            after17: 30,
           },
         ],
       },
@@ -195,43 +204,43 @@ export const PRICING_DATA: Record<string, LocationPricing> = {
   poznan: {
     locationId: 'poznan',
     locationName: 'Poznań',
+    pageTitle: 'Aktualne Ceny Kręgli i Bilarda',
     categories: {
       bowling: {
         id: 'bowling',
         title: 'Kręgle',
-        subtitle: '10 torów UV • CH Posnania',
+        subtitle: 'Torów bowlingowych • CH King Cross Marcelin',
         unitText: 'za 1 godz. gry na 1 torze',
-        extraNote: 'Podane ceny dotyczą 1 godziny gry na 1 torze. Obuwie specjalistyczne: 4 zł / para.',
+        extraNote: 'Podane ceny dotyczą 1 godziny gry na 1 torze. Wypożyczenie obuwia do gry: 5 zł za parę.',
         pricing: [
           {
             id: 'mon-thu',
             dayLabel: 'Poniedziałek – Czwartek',
             dayShort: 'Pn - Czw',
-            before17: 95,
-            after17: 125,
+            before17: 129,
+            after17: 159,
           },
           {
             id: 'fri',
             dayLabel: 'Piątek',
             dayShort: 'Pt',
-            before17: 115,
-            after17: 169,
-            isPopular: true,
+            before17: 129,
+            after17: 199,
           },
           {
             id: 'sat-holidays',
             dayLabel: 'Sobota i Święta',
             dayShort: 'Sob i Święta',
-            before17: 145,
-            after17: 175,
+            before17: 159,
+            after17: 199,
             isPopular: true,
           },
           {
             id: 'sun',
             dayLabel: 'Niedziela',
             dayShort: 'Ndz',
-            before17: 145,
-            after17: 165,
+            before17: 159,
+            after17: 189,
           },
         ],
       },
@@ -246,30 +255,54 @@ export const PRICING_DATA: Record<string, LocationPricing> = {
             id: 'mon-thu',
             dayLabel: 'Poniedziałek – Czwartek',
             dayShort: 'Pn - Czw',
-            before17: 25,
-            after17: 30,
+            before17: 35,
+            after17: 40,
           },
           {
             id: 'fri',
             dayLabel: 'Piątek',
             dayShort: 'Pt',
-            before17: 25,
-            after17: 35,
+            before17: 35,
+            after17: 50,
           },
           {
             id: 'sat-holidays',
             dayLabel: 'Sobota i Święta',
             dayShort: 'Sob i Święta',
-            before17: 30,
-            after17: 35,
+            before17: 45,
+            after17: 50,
             isPopular: true,
           },
           {
             id: 'sun',
             dayLabel: 'Niedziela',
             dayShort: 'Ndz',
-            before17: 30,
-            after17: 30,
+            before17: 45,
+            after17: 50,
+          },
+        ],
+      },
+      karaoke: {
+        id: 'karaoke',
+        title: 'Karaoke',
+        subtitle: 'Sala karaoke • śpiew dla każdego',
+        unitText: 'za 1 godz. wynajmu sali',
+        extraNote: 'Podane ceny dotyczą 1 godziny wynajmu sali karaoke.',
+        pricing: [
+          {
+            id: 'mon-thu',
+            dayLabel: 'Poniedziałek – Czwartek',
+            dayShort: 'Pn - Czw',
+            before17: 90,
+            after17: 90,
+          },
+          {
+            id: 'fri-sun',
+            dayLabel: 'Piątek – Niedziela',
+            dayShort: 'Pt - Nd',
+            before17: 160,
+            after17: 160,
+            isPopular: true,
           },
         ],
       },
