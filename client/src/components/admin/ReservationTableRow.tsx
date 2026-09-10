@@ -4,7 +4,7 @@ import type { Reservation, ReservationStatus } from '../../types/booking';
 interface ReservationTableRowProps {
   res: Reservation;
   onStatusUpdate: (id: string, status: ReservationStatus) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function ReservationTableRow({
@@ -50,9 +50,14 @@ export default function ReservationTableRow({
         </div>
       </td>
 
-      {/* Guests */}
-      <td className="py-4 px-4 font-bold text-slate-200">
-        {res.guests_count} osób
+      {/* Guests & Payment Price */}
+      <td className="py-4 px-4">
+        <div className="font-bold text-slate-200">{res.guests_count} osób</div>
+        {res.total_price ? (
+          <div className="text-[10px] font-mono text-amber-300 font-bold mt-0.5">
+            {res.total_price} PLN <span className="text-[9px] text-slate-400 uppercase font-sans">({res.payment_method || 'online'})</span>
+          </div>
+        ) : null}
       </td>
 
       {/* Status Badge */}
@@ -107,13 +112,15 @@ export default function ReservationTableRow({
             </button>
           )}
 
-          <button
-            onClick={() => onDelete(res.id)}
-            title="Usuń wpis"
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/10 transition-all cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {onDelete && (
+            <button
+              onClick={() => onDelete(res.id)}
+              title="Usuń wpis"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/10 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </td>
     </tr>

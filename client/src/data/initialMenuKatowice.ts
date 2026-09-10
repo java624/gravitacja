@@ -505,7 +505,7 @@ export const INITIAL_MENU_KATOWICE: InitialMenuItem[] = [
     location_slug: 'katowice',
     category: 'piwo',
     title: 'Wieża Piwna Żywiec (5L / 3L)',
-    description: 'Imprezowa wieża piwna z kranikiem для grupy. Cena: 5L (155 zł) / 3L (95 zł).',
+    description: 'Imprezowa wieża piwna z kranikiem dla grupy. Cena: 5L (155 zł) / 3L (95 zł).',
     price: 155,
     price_maxi: 95,
     volume: '5L / 3L',

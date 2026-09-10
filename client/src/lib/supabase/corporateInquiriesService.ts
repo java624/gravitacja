@@ -9,6 +9,12 @@ import { getMockCorporateInquiries, saveMockCorporateInquiries } from './mockSto
 /** Docelowy adres e-mail, na który trafiają zapytania firmowe (fallback do klienta poczty). */
 export const CORPORATE_INQUIRIES_EMAIL = 'biuro@gravitacja.pl';
 
+const LOCATION_NAMES: Record<string, string> = {
+  katowice: 'Katowice',
+  jaworzno: 'Jaworzno',
+  poznan: 'Poznań',
+};
+
 export interface SubmitResult {
   id: string;
   saved: boolean;
@@ -16,10 +22,16 @@ export interface SubmitResult {
 }
 
 /** Buduje gotowy link mailto: z treścią zapytania (ręczna integracja e-mail). */
-export function buildCorporateMailtoHref(input: CorporateInquiryInput, id: string): string {
+export function buildCorporateMailtoHref(
+  input: CorporateInquiryInput,
+  id: string,
+  locationSlug: string = 'katowice'
+): string {
+  const locationName = LOCATION_NAMES[locationSlug] || 'Grawitacja';
   const subject = `Zapytanie firmowe (Dla Firm) - ${input.companyName}`;
   const lines = [
     `Id: ${id}`,
+    `Lokalizacja: ${locationName}`,
     `Firma / Osoba kontaktowa: ${input.companyName}`,
     `E-mail: ${input.email}`,
     `Telefon: ${input.phone}`,
@@ -35,14 +47,17 @@ export function buildCorporateMailtoHref(input: CorporateInquiryInput, id: strin
 }
 
 /** Zapisuje zapytanie — najpierw do Supabase, w razie braku konfiguracji/błędu do localStorage (widoczne w panelu admina). */
-export async function submitCorporateInquiry(input: CorporateInquiryInput): Promise<SubmitResult> {
+export async function submitCorporateInquiry(
+  input: CorporateInquiryInput,
+  locationSlug: string = 'katowice'
+): Promise<SubmitResult> {
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from('corporate_inquiries')
         .insert([
           {
-            location_slug: 'katowice',
+            location_slug: locationSlug,
             company_name: input.companyName,
             email: input.email,
             phone: input.phone,
@@ -66,7 +81,7 @@ export async function submitCorporateInquiry(input: CorporateInquiryInput): Prom
   const id = `inq-${Date.now()}`;
   const entry: CorporateInquiry = {
     id,
-    location_slug: 'katowice',
+    location_slug: locationSlug,
     company_name: input.companyName,
     email: input.email,
     phone: input.phone,

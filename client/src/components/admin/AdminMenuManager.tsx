@@ -104,7 +104,7 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
             Karta Dań, Napojów i Alkoholi ({items.length})
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Włączaj/wyłączaj potrawy w 1-kлик (Stop-list) oraz edytuj ceny i pozycje.
+            Włączaj/wyłączaj potrawy w 1-klik (Stop-list) oraz edytuj ceny i pozycje.
           </p>
         </div>
 

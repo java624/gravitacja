@@ -12,6 +12,7 @@ interface AdminFilterBarProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   todayStr: string;
+  isLocationLocked?: boolean;
 }
 
 export default function AdminFilterBar({
@@ -26,21 +27,29 @@ export default function AdminFilterBar({
   searchQuery,
   setSearchQuery,
   todayStr,
+  isLocationLocked = false,
 }: AdminFilterBarProps) {
   return (
     <div className="bg-slate-950/80 border border-white/15 rounded-2xl p-4 backdrop-blur-xl space-y-3">
       <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-        <Filter className="w-4 h-4 text-orange-400" /> Filarowanie i Szukanie
+        <Filter className="w-4 h-4 text-orange-400" /> Filtrowanie i Szukanie
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Location Filter */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Lokalizacja</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+            Lokalizacja {isLocationLocked && '(Zablokowana)'}
+          </label>
           <select
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="w-full bg-slate-900 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
+            onChange={(e) => !isLocationLocked && setSelectedLocation(e.target.value)}
+            disabled={isLocationLocked}
+            className={`w-full bg-slate-900 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none ${
+              isLocationLocked
+                ? 'border-cyan-500/40 text-cyan-300 bg-cyan-950/30 cursor-not-allowed font-bold'
+                : 'border-white/15 focus:border-orange-500'
+            }`}
           >
             <option value="all">Wszystkie Centra</option>
             <option value="katowice">Katowice</option>

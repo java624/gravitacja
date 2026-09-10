@@ -18,10 +18,11 @@ import BookingModal from './components/booking/BookingModal';
 import BirthdayModal from './components/modals/BirthdayModal';
 import CorporateModal from './components/modals/CorporateModal';
 import MenuModal from './components/modals/MenuModal';
-import AdminAuthModal from './components/admin/AdminAuthModal';
+import { AdminLoginModal } from './components/admin/auth/AdminLoginModal';
+import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { useLocationContext } from './context/LocationContext';
 
-export default function App() {
+function AppContent() {
   const {
     isBookingOpen,
     closeBooking,
@@ -30,32 +31,21 @@ export default function App() {
     setActiveSlug,
   } = useLocationContext();
 
-  const [currentView, setCurrentView] = useState<'client' | 'admin'>('client');
+  const { isAuthenticated } = useAdminAuth();
 
-  // Admin authentication state
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('gravitacja_admin_auth') === 'true';
-  });
+  const [currentView, setCurrentView] = useState<'client' | 'admin'>('client');
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState<boolean>(false);
 
   const handleAdminSuccess = () => {
-    setIsAdminAuthenticated(true);
-    sessionStorage.setItem('gravitacja_admin_auth', 'true');
     setIsAdminAuthModalOpen(false);
     setCurrentView('admin');
-  };
-
-  const handleAdminLogout = () => {
-    setIsAdminAuthenticated(false);
-    sessionStorage.removeItem('gravitacja_admin_auth');
-    setCurrentView('client');
   };
 
   const handleToggleAdminView = () => {
     if (currentView === 'admin') {
       setCurrentView('client');
     } else {
-      if (isAdminAuthenticated) {
+      if (isAuthenticated) {
         setCurrentView('admin');
       } else {
         setIsAdminAuthModalOpen(true);
@@ -77,20 +67,7 @@ export default function App() {
       {/* Main Content Area with top spacing for fixed header */}
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex-1 w-full">
         {currentView === 'admin' ? (
-          !isAdminAuthenticated ? (
-            <div className="py-20 text-center space-y-4">
-              <h2 className="text-xl font-bold text-amber-400">Wymagana Autoryzacja Admina</h2>
-              <p className="text-xs text-slate-400">Dostęp do panelu zarządczego wymaga podania PINu pracownika.</p>
-              <button
-                onClick={() => setIsAdminAuthModalOpen(true)}
-                className="px-6 py-2.5 rounded-xl bg-amber-500 text-black font-black text-xs uppercase"
-              >
-                Wprowadź PIN
-              </button>
-            </div>
-          ) : (
-            <AdminPage onLogout={handleAdminLogout} />
-          )
+          <AdminPage onOpenAuthModal={() => setIsAdminAuthModalOpen(true)} />
         ) : (
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -128,7 +105,7 @@ export default function App() {
           setCurrentView('client');
         }}
         onOpenAdminAuth={() => {
-          if (isAdminAuthenticated) {
+          if (isAuthenticated) {
             setCurrentView('admin');
           } else {
             setIsAdminAuthModalOpen(true);
@@ -149,12 +126,20 @@ export default function App() {
       <CorporateModal />
       <MenuModal />
 
-      {/* Admin Authentication PIN Modal */}
-      <AdminAuthModal
+      {/* Role-Based Admin Authentication Modal */}
+      <AdminLoginModal
         isOpen={isAdminAuthModalOpen}
         onClose={() => setIsAdminAuthModalOpen(false)}
         onSuccess={handleAdminSuccess}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AdminAuthProvider>
+      <AppContent />
+    </AdminAuthProvider>
   );
 }

@@ -7,7 +7,7 @@ interface ReservationTableProps {
   isLoading: boolean;
   onRefresh: () => void;
   onStatusUpdate: (id: string, status: ReservationStatus) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function ReservationTable({

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLocationContext, type LocationSlug } from '../context/LocationContext';
 import KidsBirthdaysHero from '../components/kidsbirthdays/KidsBirthdaysHero';
+import KidsBirthdaysJaworznoHero from '../components/kidsbirthdays/KidsBirthdaysJaworznoHero';
 import KidsBirthdaysIntro from '../components/kidsbirthdays/KidsBirthdaysIntro';
 import KidsBirthdaysPackages from '../components/kidsbirthdays/KidsBirthdaysPackages';
 import KidsBirthdaysExtras from '../components/kidsbirthdays/KidsBirthdaysExtras';
@@ -10,6 +11,7 @@ import LocationDataPlaceholder from '../components/ui/LocationDataPlaceholder';
 import LaneDivider from '../components/ui/LaneDivider';
 import type { BirthdayPackageType } from '../types/birthday';
 import { LOCATIONS_DATA } from '../data/locationsData';
+import { JAWORZNO_KIDS_PACKAGES, JAWORZNO_KIDS_EXTRAS } from '../data/kidsData';
 import { Cake } from 'lucide-react';
 
 const scrollTo = (id: string) => {
@@ -28,6 +30,7 @@ export default function KidsBirthdaysPage() {
 
   const currentLocation = LOCATIONS_DATA.find((l) => l.id === validSlug) || LOCATIONS_DATA[1];
   const isKatowice = validSlug === 'katowice';
+  const isJaworzno = validSlug === 'jaworzno';
 
   useEffect(() => {
     setActiveSlug(validSlug);
@@ -57,9 +60,29 @@ export default function KidsBirthdaysPage() {
           <LaneDivider label="SZYBKIE ZAPYTANIE • ZAREZERWUJ URODZINY KATOWICE" badge="REZERWACJA" />
           <KidsBirthdaysContactForm initialPackage={selectedPackage} />
         </>
+      ) : isJaworzno ? (
+        <>
+          {/* Jaworzno Full Offer — dane wyłącznie z JAWORZNO_KIDS_* (src/data/kidsData.ts) */}
+          <KidsBirthdaysJaworznoHero
+            onScrollToPackages={() => scrollTo('zestawy-urodzinowe')}
+            onScrollToForm={() => scrollTo('zapytanie-urodziny')}
+          />
+          <LaneDivider label="ZESTAWY URODZINOWE • SŁOŃCE vs GRAVITACJA • JAWORZNO" badge="ZESTAWY" />
+          <KidsBirthdaysPackages packages={JAWORZNO_KIDS_PACKAGES} onScrollToForm={handleSelectPackage} />
+          <LaneDivider label="ATRAKCJE DODATKOWE • DOPASUJ SWÓJ PAKIET • JAWORZNO" badge="DODATKI" />
+          <KidsBirthdaysExtras extras={JAWORZNO_KIDS_EXTRAS} />
+          <LaneDivider label="SZYBKIE ZAPYTANIE • ZAREZERWUJ URODZINY JAWORZNO" badge="REZERWACJA" />
+          <KidsBirthdaysContactForm
+            initialPackage={selectedPackage}
+            locationSlug="jaworzno"
+            packages={JAWORZNO_KIDS_PACKAGES}
+            offeredExtras={JAWORZNO_KIDS_EXTRAS}
+            minGroup={6}
+          />
+        </>
       ) : (
         <>
-          {/* Location Specific Page for Jaworzno / Poznań */}
+          {/* Poznań (or unknown location) placeholder */}
           <section className="relative rounded-3xl p-6 sm:p-10 border border-white/10 bg-slate-950/90 backdrop-blur-2xl overflow-hidden shadow-2xl space-y-4">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-pink-500 to-transparent" />
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[10px] sm:text-xs font-black tracking-wider uppercase">

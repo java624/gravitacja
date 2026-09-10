@@ -15,20 +15,35 @@ import {
 } from 'lucide-react';
 import { submitBirthdayInquiry, buildBirthdayMailtoHref, BIRTHDAY_INQUIRIES_EMAIL } from '../../lib/supabase';
 import { LOCATIONS_DATA } from '../../data/locationsData';
-import { BIRTHDAY_PACKAGES, BIRTHDAY_EXTRAS } from './kidsBirthdaysData';
+import { BIRTHDAY_PACKAGES, BIRTHDAY_EXTRAS, type BirthdayPackage, type BirthdayExtra } from './kidsBirthdaysData';
 import type { BirthdayPackageType } from '../../types/birthday';
-
-const EXTRA_OPTIONS = BIRTHDAY_EXTRAS.filter((extra) => extra.id !== 'woda-butelka').map((extra) => ({
-  value: extra.id,
-  label: extra.name,
-}));
 
 interface KidsBirthdaysContactFormProps {
   initialPackage?: BirthdayPackageType | null;
+  locationSlug?: string;
+  packages?: BirthdayPackage[];
+  offeredExtras?: BirthdayExtra[];
+  minGroup?: number;
 }
 
-export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthdaysContactFormProps) {
-  const katowice = LOCATIONS_DATA.find((l) => l.id === 'katowice') || LOCATIONS_DATA[1];
+export default function KidsBirthdaysContactForm({
+  initialPackage,
+  locationSlug = 'katowice',
+  packages = BIRTHDAY_PACKAGES,
+  offeredExtras = BIRTHDAY_EXTRAS,
+  minGroup = 5,
+}: KidsBirthdaysContactFormProps) {
+  const location =
+    LOCATIONS_DATA.find((l) => l.id === locationSlug) ||
+    LOCATIONS_DATA.find((l) => l.id === 'katowice') ||
+    LOCATIONS_DATA[1];
+
+  const extraOptions = offeredExtras
+    .filter((extra) => extra.id !== 'woda-butelka')
+    .map((extra) => ({
+      value: extra.id,
+      label: extra.name,
+    }));
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +106,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
         guestsCount: guestsCount ? Number(guestsCount) : undefined,
         extras: extras.length > 0 ? extras : undefined,
         notes: notes.trim() || undefined,
-      });
+      }, locationSlug);
 
       setResult({
         id: saved.id,
@@ -109,7 +124,8 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
             extras: extras.length > 0 ? extras : undefined,
             notes: notes.trim() || undefined,
           },
-          saved.id
+          saved.id,
+          locationSlug
         ),
       });
     } catch (err) {
@@ -131,7 +147,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-pink-500/10 border border-pink-400/30 text-pink-300 text-[10px] sm:text-xs font-black tracking-widest uppercase">
               <PartyPopper className="w-3.5 h-3.5" />
-              <span>Szybkie zapytanie • Urodziny w Katowicach</span>
+              <span>Szybkie zapytanie • Urodziny w {location.name}</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
               Zarezerwuj <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-300 to-amber-300">urodziny</span>
@@ -139,7 +155,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-medium">
               Wypełnij formularz, a nasz zespół skontaktuje się z Tobą, aby potwierdzić szczegóły przyjęcia.
 
-              Możesz też zadzwonić: <a className="text-pink-300 font-bold" href={`tel:${katowice.phoneClean}`}>{katowice.phone}</a>.
+              Możesz też zadzwonić: <a className="text-pink-300 font-bold" href={`tel:${location.phoneClean}`}>{location.phone}</a>.
             </p>
           </div>
           {result ? (
@@ -169,11 +185,11 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
                   <span>Wyślij przez e-mail</span>
                 </a>
                 <a
-                  href={`tel:${katowice.phoneClean}`}
+                  href={`tel:${location.phoneClean}`}
                   className="flex-1 sm:flex-none px-6 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center gap-2 active:scale-98"
                 >
                   <Phone className="w-4 h-4 text-emerald-400" />
-                  <span>{katowice.phone}</span>
+                  <span>{location.phone}</span>
                 </a>
               </div>
               <p className="text-[10px] text-slate-500 mt-3">
@@ -291,7 +307,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
                 </label>
                 <input
                   type="number"
-                  min={5}
+                  min={minGroup}
                   placeholder="np. 10"
                   value={guestsCount}
                   onChange={(e) => setGuestsCount(e.target.value)}
@@ -305,7 +321,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
                   <Gift className="w-3.5 h-3.5 text-pink-400" /> Wybierz pakiet
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {BIRTHDAY_PACKAGES.map((pkg) => {
+                  {packages.map((pkg) => {
                     const active = packageType === pkg.id;
                     const Icon = pkg.icon;
                     return (
@@ -345,7 +361,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
                   <Gift className="w-3.5 h-3.5 text-amber-400" /> Dodatkowe atrakcje (opcjonalnie)
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {EXTRA_OPTIONS.map((opt) => {
+                  {extraOptions.map((opt) => {
                     const active = extras.includes(opt.value);
                     return (
                       <button
@@ -406,7 +422,7 @@ export default function KidsBirthdaysContactForm({ initialPackage }: KidsBirthda
                   )}
                 </button>
                 <p className="text-[10px] text-slate-500 mt-3">
-                  Wysyłając formularz akceptujesz, że Twoje dane zostaną wykorzystane wyłącznie w celu kontaktu w sprawie oferty. Min. grupa 5 dzieci — szczegóły potwierdzimy telefonicznie.
+                  Wysyłając formularz akceptujesz, że Twoje dane zostaną wykorzystane wyłącznie w celu kontaktu w sprawie oferty. Min. grupa {minGroup} dzieci — szczegóły potwierdzimy telefonicznie.
 
                 </p>
               </div>

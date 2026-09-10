@@ -10,6 +10,7 @@ interface Step4ConfirmationProps {
   date: string;
   startTime: string;
   endTime: string;
+  totalPrice?: number;
   onClose: () => void;
 }
 
@@ -22,6 +23,7 @@ export default function Step4Confirmation({
   date,
   startTime,
   endTime,
+  totalPrice,
   onClose,
 }: Step4ConfirmationProps) {
   const resourceName = availableResources.find(r => r.resource.id === selectedResourceId)?.resource.name;
@@ -36,7 +38,7 @@ export default function Step4Confirmation({
         <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Sukces! Rezerwacja Otrzymana</span>
         <h3 className="text-xl font-black text-white mt-1">Dziękujemy, {clientName}!</h3>
         <p className="text-xs text-slate-400 mt-1">
-          Twoja rezerwacja oczekuje na potwierdzenie przez obsługę centrum Gravitacja.
+          Twoja rezerwacja została zarejestrowana i opłacona w systemie Gravitacja.
         </p>
       </div>
 
@@ -57,10 +59,16 @@ export default function Step4Confirmation({
           <span className="text-slate-400">Data & Czas:</span>
           <span className="font-bold text-white">{date} ({startTime} - {endTime})</span>
         </div>
+        {totalPrice && (
+          <div className="flex justify-between border-t border-white/10 pt-2 text-amber-300 font-bold">
+            <span>Wartość zamówienia:</span>
+            <span>{totalPrice} PLN</span>
+          </div>
+        )}
         <div className="flex justify-between">
-          <span className="text-slate-400">Status:</span>
-          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 font-sans font-bold text-[10px] uppercase">
-            Oczekująca (Pending)
+          <span className="text-slate-400">Status Płatności:</span>
+          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-sans font-bold text-[10px] uppercase">
+            Opłacono / Potwierdzono
           </span>
         </div>
       </div>

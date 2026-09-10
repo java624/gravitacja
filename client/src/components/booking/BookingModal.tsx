@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
-import type { LocationSlug, Resource, ResourceType } from '../../types/booking';
-import { fetchAvailableResources, createReservation } from '../../lib/supabase';
+import type { LocationSlug, Resource, ResourceType, PaymentMethod } from '../../types/booking';
+import { fetchAvailableResources } from '../../lib/supabase';
+import { verifyAndCreateReservation, OverbookingConflictError } from '../../services/booking/availabilityService';
+import { useBookingPrice } from '../../hooks/useBookingPrice';
 import BookingStepIndicator from './BookingStepIndicator';
 import Step1TermSelection from './Step1TermSelection';
 import Step2LaneSelection from './Step2LaneSelection';
@@ -28,6 +30,22 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
   const [startTime, setStartTime] = useState<string>('17:00');
   const [endTime, setEndTime] = useState<string>('19:00');
   const [guestsCount, setGuestsCount] = useState<number>(4);
+
+  // Extras & Payment State
+  const [includeShoes, setIncludeShoes] = useState<boolean>(true);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('blik');
+
+  // Dynamic Price Calculator
+  const priceBreakdown = useBookingPrice({
+    locationSlug: selectedLocation,
+    resourceType,
+    date,
+    startTime,
+    endTime,
+    resourceCount: 1,
+    includeShoes,
+    shoesCount: guestsCount,
+  });
 
   // Availability state
   const [availableResources, setAvailableResources] = useState<{ resource: Resource; isAvailable: boolean }[]>([]);
@@ -65,11 +83,11 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
     setErrorMessage(null);
     try {
       const data = await fetchAvailableResources(selectedLocation, date, startTime, endTime);
-      const filtered = data.filter(item => item.resource.type === resourceType);
+      const filtered = data.filter((item: { resource: Resource; isAvailable: boolean }) => item.resource.type === resourceType);
       setAvailableResources(filtered);
       
-      const availableItems = filtered.filter(item => item.isAvailable);
-      if (availableItems.length > 0 && (!selectedResourceId || !availableItems.some(i => i.resource.id === selectedResourceId))) {
+      const availableItems = filtered.filter((item: { resource: Resource; isAvailable: boolean }) => item.isAvailable);
+      if (availableItems.length > 0 && (!selectedResourceId || !availableItems.some((i: { resource: Resource; isAvailable: boolean }) => i.resource.id === selectedResourceId))) {
         setSelectedResourceId(availableItems[0].resource.id);
       }
     } catch (err) {
@@ -104,7 +122,11 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
     setIsSubmitting(true);
 
     try {
-      const reservation = await createReservation({
+      // Simulate realistic payment gateway processing delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Atomic verification against double booking before finalizing
+      const reservation = await verifyAndCreateReservation({
         resource_id: selectedResourceId,
         location_slug: selectedLocation,
         client_name: clientName.trim(),
@@ -114,12 +136,24 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
         start_time: startTime,
         end_time: endTime,
         guests_count: guestsCount,
+        total_price: priceBreakdown.totalPrice,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'reception' ? 'pending' : 'paid',
+        include_shoes: includeShoes,
+        shoes_count: includeShoes ? guestsCount : 0,
       });
 
       setCompletedReservationId(reservation.id);
       setStep(4);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Wystąpił błąd podczas tworzenia rezerwacji.');
+      if (err instanceof OverbookingConflictError) {
+        setErrorMessage(err.message);
+        // Refresh availability grid and move back to lane selection
+        loadAvailability();
+        setStep(2);
+      } else {
+        setErrorMessage(err.message || 'Wystąpił błąd podczas tworzenia rezerwacji.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -230,6 +264,11 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
               setClientPhone={setClientPhone}
               clientEmail={clientEmail}
               setClientEmail={setClientEmail}
+              includeShoes={includeShoes}
+              setIncludeShoes={setIncludeShoes}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              breakdown={priceBreakdown}
               isSubmitting={isSubmitting}
               onBack={() => setStep(2)}
               onSubmit={handleSubmitBooking}
@@ -246,6 +285,7 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
               date={date}
               startTime={startTime}
               endTime={endTime}
+              totalPrice={priceBreakdown.totalPrice}
               onClose={handleClose}
             />
           )}

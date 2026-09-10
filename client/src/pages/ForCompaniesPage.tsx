@@ -6,6 +6,11 @@ import ForCompaniesFeatures from '../components/forcompanies/ForCompaniesFeature
 import ForCompaniesDescription from '../components/forcompanies/ForCompaniesDescription';
 import ForCompaniesVoucher from '../components/forcompanies/ForCompaniesVoucher';
 import ForCompaniesContactForm from '../components/forcompanies/ForCompaniesContactForm';
+import ForCompaniesJaworznoHero from '../components/forcompanies/ForCompaniesJaworznoHero';
+import ForCompaniesJaworznoDescription from '../components/forcompanies/ForCompaniesJaworznoDescription';
+import ForCompaniesJaworznoFeatures from '../components/forcompanies/ForCompaniesJaworznoFeatures';
+import ForCompaniesJaworznoVideo from '../components/forcompanies/ForCompaniesJaworznoVideo';
+import ForCompaniesJaworznoVoucher from '../components/forcompanies/ForCompaniesJaworznoVoucher';
 import LocationDataPlaceholder from '../components/ui/LocationDataPlaceholder';
 import LaneDivider from '../components/ui/LaneDivider';
 import { LOCATIONS_DATA } from '../data/locationsData';
@@ -26,6 +31,7 @@ export default function ForCompaniesPage() {
 
   const currentLocation = LOCATIONS_DATA.find((l) => l.id === validSlug) || LOCATIONS_DATA[1];
   const isKatowice = validSlug === 'katowice';
+  const isJaworzno = validSlug === 'jaworzno';
 
   useEffect(() => {
     setActiveSlug(validSlug);
@@ -47,9 +53,29 @@ export default function ForCompaniesPage() {
           <LaneDivider label="SZYBKIE ZAPYTANIE • REZERWACJA FIRMOWA KATOWICE" badge="KONTAKT" />
           <ForCompaniesContactForm />
         </>
+      ) : isJaworzno ? (
+        <>
+          {/* Jaworzno Full Corporate Offer — dane wyłącznie z JAWORZNO_FIRMY_* (src/data/firmyData.ts) */}
+          <ForCompaniesJaworznoHero
+            onScrollToFeatures={() => scrollTo('nasze-atuty-jaworzno')}
+            onScrollToForm={() => scrollTo('zapytanie-firmowe')}
+          />
+          <LaneDivider label="DLACZEGO GRAWITACJA JAWORZNO • IMPREZY FIRMOWE" badge="DLA FIRM" />
+          <ForCompaniesJaworznoDescription />
+          <LaneDivider label="NASZE ATUTY • JAWORZNO" badge="ATUTY" />
+          <section id="nasze-atuty-jaworzno" className="scroll-mt-28">
+            <ForCompaniesJaworznoFeatures />
+          </section>
+          <LaneDivider label="ZOBACZ GRAWITACJĘ W AKCJI • WIDEO" badge="WIDEO" />
+          <ForCompaniesJaworznoVideo />
+          <LaneDivider label="VOUCHER FIRMOWY • IDEALNY PREZENT DLA PRACOWNIKÓW" badge="VOUCHERY" />
+          <ForCompaniesJaworznoVoucher onScrollToForm={() => scrollTo('zapytanie-firmowe')} />
+          <LaneDivider label="SZYBKIE ZAPYTANIE • REZERWACJA FIRMOWA JAWORZNO" badge="KONTAKT" />
+          <ForCompaniesContactForm locationSlug="jaworzno" />
+        </>
       ) : (
         <>
-          {/* Location Specific Page for Jaworzno / Poznań */}
+          {/* Location Specific Page for Poznań (placeholder) */}
           <section className="relative rounded-3xl p-6 sm:p-10 border border-white/10 bg-slate-950/90 backdrop-blur-2xl overflow-hidden shadow-2xl space-y-4">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] sm:text-xs font-black tracking-wider uppercase">

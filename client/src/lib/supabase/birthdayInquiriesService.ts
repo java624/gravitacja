@@ -9,11 +9,23 @@ import { getMockBirthdayInquiries, saveMockBirthdayInquiries } from './mockStore
 /** Docelowy adres e-mail, na który trafiają zapytania o urodziny (fallback do klienta poczty). */
 export const BIRTHDAY_INQUIRIES_EMAIL = 'biuro@gravitacja.pl';
 
+const LOCATION_NAMES: Record<string, string> = {
+  katowice: 'Katowice',
+  jaworzno: 'Jaworzno',
+  poznan: 'Poznań',
+};
+
 /** Buduje gotowy link mailto: z treścią zapytania (ręczna integracja e-mail). */
-export function buildBirthdayMailtoHref(input: BirthdayInquiryInput, id: string): string {
-  const subject = `Urodziny dla dzieci (Katowice) - ${input.childName || input.parentName}`;
+export function buildBirthdayMailtoHref(
+  input: BirthdayInquiryInput,
+  id: string,
+  locationSlug: string = 'katowice'
+): string {
+  const locationName = LOCATION_NAMES[locationSlug] || 'Grawitacja';
+  const subject = `Urodziny dla dzieci (${locationName}) - ${input.childName || input.parentName}`;
   const lines = [
     `Id: ${id}`,
+    `Lokalizacja: ${locationName}`,
     `Opiekun: ${input.parentName}`,
     `E-mail: ${input.email}`,
     `Telefon: ${input.phone}`,
@@ -22,7 +34,7 @@ export function buildBirthdayMailtoHref(input: BirthdayInquiryInput, id: string)
     lines.push(`Dziecko: ${[input.childName, input.childAge ? `${input.childAge} lat` : null].filter(Boolean).join(', ')}`);
   }
   if (input.eventDate) lines.push(`Planowany termin: ${input.eventDate}${input.eventTime ? ` o godz. ${input.eventTime}` : ''}`);
-  if (input.packageType) lines.push(`Wybrany pakiet: ${input.packageType === 'slonce' ? 'SŁOŃCE (75 zł/os.)' : 'GRAVITACJA (85 zł/os.)'}`);
+  if (input.packageType) lines.push(`Wybrany pakiet: ${input.packageType === 'slonce' ? 'SŁOŃCE' : 'GRAVITACJA'}`);
   if (input.guestsCount) lines.push(`Liczba dzieci: ${input.guestsCount}`);
   if (input.extras && input.extras.length > 0) lines.push(`Atrakcje dodatkowe: ${input.extras.join(', ')}`);
   if (input.notes?.trim()) lines.push(`\nUwagi:\n${input.notes.trim()}`);
@@ -31,14 +43,17 @@ export function buildBirthdayMailtoHref(input: BirthdayInquiryInput, id: string)
 }
 
 /** Zapisuje zapytanie — najpierw do Supabase, w razie braku konfiguracji/błędu do localStorage (widoczne w panelu admina). */
-export async function submitBirthdayInquiry(input: BirthdayInquiryInput): Promise<{ id: string; via: 'supabase' | 'local' }> {
+export async function submitBirthdayInquiry(
+  input: BirthdayInquiryInput,
+  locationSlug: string = 'katowice'
+): Promise<{ id: string; via: 'supabase' | 'local' }> {
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from('birthday_inquiries')
         .insert([
           {
-            location_slug: 'katowice',
+            location_slug: locationSlug,
             parent_name: input.parentName,
             email: input.email,
             phone: input.phone,
@@ -66,7 +81,7 @@ export async function submitBirthdayInquiry(input: BirthdayInquiryInput): Promis
   const id = `bday-${Date.now()}`;
   const entry: BirthdayInquiry = {
     id,
-    location_slug: 'katowice',
+    location_slug: locationSlug,
     parent_name: input.parentName,
     email: input.email,
     phone: input.phone,

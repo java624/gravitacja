@@ -1,191 +1,50 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Utensils, Gift, Cake } from 'lucide-react';
-import type { Reservation, ReservationFilter, ReservationStatus } from '../types/booking';
-import { fetchReservations, updateReservationStatus, deleteReservation } from '../lib/supabase';
-import AdminHeader from '../components/admin/AdminHeader';
-import AdminKpiStats from '../components/admin/AdminKpiStats';
-import AdminFilterBar from '../components/admin/AdminFilterBar';
-import ReservationTable from '../components/admin/ReservationTable';
-import AdminMenuManager from '../components/admin/AdminMenuManager';
-import CorporateInquiriesTable from '../components/admin/CorporateInquiriesTable';
-import KidsBirthdaysTable from '../components/admin/KidsBirthdaysTable';
-import BookingModal from '../components/booking/BookingModal';
+import { useAdminAuth } from '../context/AdminAuthContext';
+import { ReceptionDashboard } from '../components/admin/reception/ReceptionDashboard';
+import { OwnerDashboard } from '../components/admin/owner/OwnerDashboard';
+import { Lock, Sparkles } from 'lucide-react';
 
 interface AdminPageProps {
-  onLogout?: () => void;
+  onOpenAuthModal?: () => void;
 }
 
-export default function AdminPage({ onLogout }: AdminPageProps) {
-  const todayStr = new Date().toISOString().split('T')[0];
+export default function AdminPage({ onOpenAuthModal }: AdminPageProps) {
+  const { isAuthenticated, role } = useAdminAuth();
 
-  const [activeAdminTab, setActiveAdminTab] = useState<'reservations' | 'menu' | 'inquiries' | 'birthdays'>('reservations');
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  if (!isAuthenticated) {
+    return (
+      <div className="py-24 text-center space-y-5 max-w-md mx-auto">
+        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mx-auto flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+          <Lock className="w-8 h-8" />
+        </div>
 
-  // Filters state
-  const [selectedLocation, setSelectedLocation] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<string>('all');
-  const [customDate, setCustomDate] = useState<string>(todayStr);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest mb-2">
+            <Sparkles className="w-3.5 h-3.5" /> Strefa Chroniona
+          </div>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-white">
+            Wymagana Autoryzacja
+          </h2>
+          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+            Zaloguj się jako pracownik Recepcji lub Właściciel, aby uzyskać dostęp do panelu zarządzania.
+          </p>
+        </div>
 
-  // Admin New Reservation Modal state
-  const [isAdminBookingOpen, setIsAdminBookingOpen] = useState(false);
-
-  useEffect(() => {
-    if (activeAdminTab === 'reservations') {
-      loadReservations();
-    }
-  }, [activeAdminTab, selectedLocation, selectedDate, customDate, selectedStatus, searchQuery]);
-
-  const loadReservations = async () => {
-    setIsLoading(true);
-    try {
-      const filter: ReservationFilter = {
-        location_slug: selectedLocation !== 'all' ? selectedLocation : undefined,
-        date: selectedDate === 'today' ? todayStr : selectedDate === 'custom' ? customDate : undefined,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        searchQuery: searchQuery.trim() || undefined,
-      };
-
-      const data = await fetchReservations(filter);
-      setReservations(data);
-    } catch (err: any) {
-      console.error('Error loading reservations:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async (id: string, newStatus: ReservationStatus) => {
-    try {
-      await updateReservationStatus(id, newStatus);
-      setReservations((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-      );
-    } catch (err: any) {
-      alert('Nie udało się zmienić statusu: ' + err.message);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć tę rezerwację z systemu?')) return;
-    try {
-      await deleteReservation(id);
-      setReservations((prev) => prev.filter((r) => r.id !== id));
-    } catch (err: any) {
-      alert('Nie udało się usunąć: ' + err.message);
-    }
-  };
-
-  // Stats calculation
-  const totalCount = reservations.length;
-  const pendingCount = reservations.filter((r) => r.status === 'pending').length;
-  const confirmedCount = reservations.filter((r) => r.status === 'confirmed').length;
-  const cancelledCount = reservations.filter((r) => r.status === 'cancelled').length;
-
-  return (
-    <div className="space-y-6 pb-12 text-left">
-      <AdminHeader onOpenNewBooking={() => setIsAdminBookingOpen(true)} onLogout={onLogout} />
-
-      {/* Admin Tab Switcher */}
-      <div className="flex items-center gap-3 p-1.5 rounded-2xl bg-slate-950/80 border border-white/15 backdrop-blur-xl w-full sm:w-auto self-start shadow-inner">
-        <button
-          onClick={() => setActiveAdminTab('reservations')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-            activeAdminTab === 'reservations'
-              ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Rezerwacje Torów / Stołów</span>
-        </button>
-
-        <button
-          onClick={() => setActiveAdminTab('menu')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-            activeAdminTab === 'menu'
-              ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Utensils className="w-4 h-4" />
-          <span>Gastro & Bar Menu (Katowice)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveAdminTab('inquiries')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-            activeAdminTab === 'inquiries'
-              ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Gift className="w-4 h-4" />
-          <span>Zapytania Firmowe</span>
-        </button>
-
-        <button
-          onClick={() => setActiveAdminTab('birthdays')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-            activeAdminTab === 'birthdays'
-              ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Cake className="w-4 h-4" />
-          <span>Urodziny Dzieci</span>
-        </button>
+        {onOpenAuthModal && (
+          <button
+            type="button"
+            onClick={onOpenAuthModal}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40 text-xs font-black uppercase tracking-wider text-white shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:from-amber-400 hover:to-orange-500 transition-all cursor-pointer"
+          >
+            Wejdź do Panelu Zarządzania
+          </button>
+        )}
       </div>
+    );
+  }
 
-      {activeAdminTab === 'reservations' ? (
-        <>
-          <AdminKpiStats
-            totalCount={totalCount}
-            pendingCount={pendingCount}
-            confirmedCount={confirmedCount}
-            cancelledCount={cancelledCount}
-          />
+  if (role === 'reception') {
+    return <ReceptionDashboard />;
+  }
 
-          <AdminFilterBar
-            selectedLocation={selectedLocation}
-            setSelectedLocation={setSelectedLocation}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            customDate={customDate}
-            setCustomDate={setCustomDate}
-            selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            todayStr={todayStr}
-          />
-
-          <ReservationTable
-            reservations={reservations}
-            isLoading={isLoading}
-            onRefresh={loadReservations}
-            onStatusUpdate={handleStatusUpdate}
-            onDelete={handleDelete}
-          />
-        </>
-      ) : activeAdminTab === 'menu' ? (
-        <AdminMenuManager locationSlug="katowice" />
-      ) : activeAdminTab === 'inquiries' ? (
-        <CorporateInquiriesTable />
-      ) : (
-        <KidsBirthdaysTable />
-      )}
-
-      <BookingModal
-        isOpen={isAdminBookingOpen}
-        onClose={() => {
-          setIsAdminBookingOpen(false);
-          loadReservations();
-        }}
-        initialLocation={selectedLocation !== 'all' ? selectedLocation : 'katowice'}
-      />
-    </div>
-  );
+  return <OwnerDashboard />;
 }

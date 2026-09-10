@@ -32,7 +32,7 @@ export default function KatowicePricing({ onOpenBooking }: KatowicePricingProps)
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-md leading-relaxed">
-          Wybierz interesującą Cię dyscyplinę, sprawdź stawkę w zależności від дня i godziny, i zarezerwuj swój tor lub stół online!
+          Wybierz interesującą Cię dyscyplinę, sprawdź stawkę w zależności od dnia i godziny, i zarezerwuj swój tor lub stół online!
         </p>
       </div>
 

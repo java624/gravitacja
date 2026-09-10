@@ -14,10 +14,17 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+export interface BirthdayPackagePriceTier {
+  label: string;
+  price: string;
+}
+
 export interface BirthdayPackage {
   id: 'slonce' | 'gravitacja';
   name: string;
   pricePerPerson: string;
+  /** Optional weekday/weekend pricing tiers (e.g. Jaworzno). When present they replace the single price in the package card. */
+  priceTiers?: BirthdayPackagePriceTier[];
   duration: string;
   minGroup: string;
   tagline: string;
@@ -29,12 +36,19 @@ export interface BirthdayPackage {
   glow: string;
 }
 
+export interface BirthdayExtraOption {
+  label: string;
+  price: string;
+}
+
 export interface BirthdayExtra {
   id: string;
   name: string;
   price: string;
   unit: string;
   desc?: string;
+  /** Optional price variants (e.g. Żetony 20/30 szt). When present they replace the single price row. */
+  options?: BirthdayExtraOption[];
   icon: LucideIcon;
   color: string;
 }

@@ -1,8 +1,12 @@
-export type ResourceType = 'bowling' | 'billiards';
+export type ResourceType = 'bowling' | 'billiards' | 'dart' | 'karaoke';
 
 export type LocationSlug = 'katowice' | 'jaworzno' | 'poznan';
 
 export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled';
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
+
+export type PaymentMethod = 'blik' | 'card' | 'payu' | 'reception';
 
 export interface Resource {
   id: string;
@@ -24,6 +28,11 @@ export interface Reservation {
   end_time: string; // HH:mm
   guests_count: number;
   status: ReservationStatus;
+  total_price?: number;
+  payment_method?: PaymentMethod | string;
+  payment_status?: PaymentStatus;
+  include_shoes?: boolean;
+  shoes_count?: number;
   created_at?: string;
   resource?: Resource;
 }
@@ -38,6 +47,11 @@ export interface CreateReservationInput {
   start_time: string;
   end_time: string;
   guests_count: number;
+  total_price?: number;
+  payment_method?: PaymentMethod | string;
+  payment_status?: PaymentStatus;
+  include_shoes?: boolean;
+  shoes_count?: number;
 }
 
 export interface ReservationFilter {

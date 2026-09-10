@@ -1,12 +1,18 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Crown, Users, Clock } from 'lucide-react';
-import { BIRTHDAY_PACKAGES } from './kidsBirthdaysData';
+import { CheckCircle2, Crown, Users, Clock, CalendarRange } from 'lucide-react';
+import { BIRTHDAY_PACKAGES, type BirthdayPackage } from './kidsBirthdaysData';
 
 interface KidsBirthdaysPackagesProps {
   onScrollToForm: (packageId?: 'slonce' | 'gravitacja') => void;
+  packages?: BirthdayPackage[];
 }
 
-export default function KidsBirthdaysPackages({ onScrollToForm }: KidsBirthdaysPackagesProps) {
+export default function KidsBirthdaysPackages({
+  onScrollToForm,
+  packages = BIRTHDAY_PACKAGES,
+}: KidsBirthdaysPackagesProps) {
+  const minGroupNote = packages.find((pkg) => pkg.minGroup)?.minGroup ?? 'minimum 5 osób';
+  const hasTiers = packages.some((pkg) => pkg.priceTiers && pkg.priceTiers.length > 0);
   return (
     <section id="zestawy-urodzinowe" className="scroll-mt-28 space-y-8 text-left">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-white/10 pb-4">
@@ -17,12 +23,12 @@ export default function KidsBirthdaysPackages({ onScrollToForm }: KidsBirthdaysP
           </h2>
         </div>
         <p className="text-xs text-slate-400 font-medium max-w-xs">
-          Dwa sprawdzone zestawy — minimum 5 osób. Cena za osobę.
+          Dwa sprawdzone zestawy — {minGroupNote}. Cena za osobę.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {BIRTHDAY_PACKAGES.map((pkg) => {
+        {packages.map((pkg) => {
           const Icon = pkg.icon;
           return (
             <motion.div
@@ -64,12 +70,27 @@ export default function KidsBirthdaysPackages({ onScrollToForm }: KidsBirthdaysP
                 </div>
 
                 {/* Price */}
-                <div className="flex flex-wrap items-end gap-2">
-                  <span className="text-4xl sm:text-5xl font-black text-white leading-none">
-                    {pkg.pricePerPerson}
-                  </span>
-                  <span className="text-xs font-black uppercase text-slate-400 tracking-wider pb-1">za osobę</span>
-                </div>
+                {pkg.priceTiers && pkg.priceTiers.length > 0 ? (
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                      <CalendarRange className="w-3 h-3 text-pink-400" />
+                      <span>Cennik • za osobę</span>
+                    </div>
+                    {pkg.priceTiers.map((tier) => (
+                      <div key={tier.label} className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tier.label}</span>
+                        <span className="text-xl sm:text-2xl font-black text-white leading-none">{tier.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-end gap-2">
+                    <span className="text-4xl sm:text-5xl font-black text-white leading-none">
+                      {pkg.pricePerPerson}
+                    </span>
+                    <span className="text-xs font-black uppercase text-slate-400 tracking-wider pb-1">za osobę</span>
+                  </div>
+                )}
 
                 {/* Meta chips */}
                 <div className="flex flex-wrap gap-2">
@@ -109,6 +130,11 @@ export default function KidsBirthdaysPackages({ onScrollToForm }: KidsBirthdaysP
           );
         })}
       </div>
+      {hasTiers && (
+        <p className="text-[10px] text-slate-500 font-medium max-w-2xl">
+          Ceny obowiązują za osobę. Wariant weekendowy (piątek, sobota, niedziela) obowiązuje również w dni świąteczne — szczegóły potwierdzimy telefonicznie.
+        </p>
+      )}
     </section>
   );
 }

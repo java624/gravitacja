@@ -1,8 +1,12 @@
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { BIRTHDAY_EXTRAS } from './kidsBirthdaysData';
+import { BIRTHDAY_EXTRAS, type BirthdayExtra } from './kidsBirthdaysData';
 
-export default function KidsBirthdaysExtras() {
+interface KidsBirthdaysExtrasProps {
+  extras?: BirthdayExtra[];
+}
+
+export default function KidsBirthdaysExtras({ extras = BIRTHDAY_EXTRAS }: KidsBirthdaysExtrasProps) {
   return (
     <section id="atrakcje-dodatkowe" className="scroll-mt-28 space-y-8 text-left">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-white/10 pb-4">
@@ -18,7 +22,7 @@ export default function KidsBirthdaysExtras() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        {BIRTHDAY_EXTRAS.map((extra) => {
+        {extras.map((extra) => {
           const Icon = extra.icon;
           return (
             <motion.div
@@ -38,12 +42,23 @@ export default function KidsBirthdaysExtras() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-white/10 pt-3">
-                <span className="text-xl font-black text-white">{extra.price}</span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/25 text-[9px] font-black uppercase tracking-wider text-pink-300">
-                  <Plus className="w-3 h-3" /> Dodatek
-                </span>
-              </div>
+              {extra.options && extra.options.length > 0 ? (
+                <div className="border-t border-white/10 pt-3 space-y-1.5">
+                  {extra.options.map((opt) => (
+                    <div key={opt.label} className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold text-slate-300">{opt.label}</span>
+                      <span className="text-sm font-black text-white">{opt.price}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between border-t border-white/10 pt-3">
+                  <span className="text-xl font-black text-white">{extra.price}</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/25 text-[9px] font-black uppercase tracking-wider text-pink-300">
+                    <Plus className="w-3 h-3" /> Dodatek
+                  </span>
+                </div>
+              )}
             </motion.div>
           );
         })}
