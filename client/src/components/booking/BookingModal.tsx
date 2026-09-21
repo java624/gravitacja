@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
 import type { LocationSlug, Resource, ResourceType, PaymentMethod } from '../../types/booking';
 import { fetchAvailableResources } from '../../lib/supabase';
-import { verifyAndCreateReservation, OverbookingConflictError } from '../../services/booking/availabilityService';
+import { verifyAndCreateReservation, verifySlotIsFree, OverbookingConflictError } from '../../services/booking/availabilityService';
+import { createStripeCheckoutSession } from '../../services/booking/stripePaymentService';
 import { useBookingPrice } from '../../hooks/useBookingPrice';
 import BookingStepIndicator from './BookingStepIndicator';
 import Step1TermSelection from './Step1TermSelection';
@@ -122,10 +123,44 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
     setIsSubmitting(true);
 
     try {
-      // Simulate realistic payment gateway processing delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // 1. Verify slot availability before payment
+      const isFree = await verifySlotIsFree(selectedResourceId, date, startTime, endTime);
+      if (!isFree) {
+        throw new OverbookingConflictError('Ten termin lub tor/stół został właśnie zarezerwowany. Wybierz inny czas.');
+      }
 
-      // Atomic verification against double booking before finalizing
+      const selectedResource = availableResources.find(r => r.resource.id === selectedResourceId)?.resource;
+      const resourceName = selectedResource?.name || 'Wybrany tor/stół';
+
+      // 2. If online payment (Stripe Checkout)
+      if (paymentMethod !== 'reception') {
+        const session = await createStripeCheckoutSession({
+          resourceId: selectedResourceId,
+          resourceName,
+          locationSlug: selectedLocation,
+          clientName: clientName.trim(),
+          clientPhone: clientPhone.trim(),
+          clientEmail: clientEmail.trim(),
+          date,
+          startTime,
+          endTime,
+          guestsCount,
+          totalPrice: priceBreakdown.totalPrice,
+          includeShoes,
+          paymentMethod,
+          successUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?session_id={CHECKOUT_SESSION_ID}&booking_success=true`,
+          cancelUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?booking_cancelled=true`,
+        });
+
+        if (session && session.url) {
+          window.location.href = session.url;
+          return;
+        } else {
+          throw new Error('Nie udało się zainicjalizować sesji płatności Stripe.');
+        }
+      }
+
+      // 3. If pay at reception
       const reservation = await verifyAndCreateReservation({
         resource_id: selectedResourceId,
         location_slug: selectedLocation,
@@ -137,8 +172,8 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
         end_time: endTime,
         guests_count: guestsCount,
         total_price: priceBreakdown.totalPrice,
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === 'reception' ? 'pending' : 'paid',
+        payment_method: 'reception',
+        payment_status: 'pending',
         include_shoes: includeShoes,
         shoes_count: includeShoes ? guestsCount : 0,
       });
@@ -148,7 +183,6 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
     } catch (err: any) {
       if (err instanceof OverbookingConflictError) {
         setErrorMessage(err.message);
-        // Refresh availability grid and move back to lane selection
         loadAvailability();
         setStep(2);
       } else {
@@ -158,6 +192,7 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
       setIsSubmitting(false);
     }
   };
+
 
   const handleClose = () => {
     setStep(1);

@@ -18,9 +18,11 @@ import BookingModal from './components/booking/BookingModal';
 import BirthdayModal from './components/modals/BirthdayModal';
 import CorporateModal from './components/modals/CorporateModal';
 import MenuModal from './components/modals/MenuModal';
+import StripePaymentReturnHandler from './components/booking/StripePaymentReturnHandler';
 import { AdminLoginModal } from './components/admin/auth/AdminLoginModal';
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { useLocationContext } from './context/LocationContext';
+
 
 function AppContent() {
   const {
@@ -125,6 +127,10 @@ function AppContent() {
       <BirthdayModal />
       <CorporateModal />
       <MenuModal />
+
+      {/* Stripe Return / Confirmation Handler */}
+      <StripePaymentReturnHandler />
+
 
       {/* Role-Based Admin Authentication Modal */}
       <AdminLoginModal

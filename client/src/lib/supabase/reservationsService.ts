@@ -62,6 +62,7 @@ export async function createReservation(input: CreateReservationInput): Promise<
 
   if (supabase) {
     try {
+      const initialStatus = input.payment_status === 'paid' ? 'confirmed' : 'pending';
       const { data, error } = await supabase
         .from('reservations')
         .insert([
@@ -75,7 +76,7 @@ export async function createReservation(input: CreateReservationInput): Promise<
             start_time: input.start_time,
             end_time: input.end_time,
             guests_count: input.guests_count,
-            status: 'pending',
+            status: initialStatus,
           },
         ])
         .select('*, resource:resources(*)')
@@ -102,10 +103,16 @@ export async function createReservation(input: CreateReservationInput): Promise<
     start_time: input.start_time,
     end_time: input.end_time,
     guests_count: input.guests_count,
-    status: 'pending',
+    status: input.payment_status === 'paid' ? 'confirmed' : 'pending',
+    total_price: input.total_price,
+    payment_method: input.payment_method,
+    payment_status: input.payment_status || (input.payment_method === 'reception' ? 'pending' : 'paid'),
+    include_shoes: input.include_shoes,
+    shoes_count: input.shoes_count,
     created_at: new Date().toISOString(),
     resource: targetResource,
   };
+
 
   const updatedMock = [newReservation, ...mockReservations];
   saveMockReservations(updatedMock);

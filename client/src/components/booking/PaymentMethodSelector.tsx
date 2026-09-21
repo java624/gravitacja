@@ -17,6 +17,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
     description: string;
     icon: React.ElementType;
     badge?: string;
+    gatewayBadge?: string;
     accentColor: string;
   }[] = [
     {
@@ -25,6 +26,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       description: 'Szybka płatność kodem z aplikacji bankowej',
       icon: Zap,
       badge: 'POPULARNY',
+      gatewayBadge: 'Stripe Sandbox',
       accentColor: 'border-rose-500/40 text-rose-400 bg-rose-500/10',
     },
     {
@@ -32,13 +34,15 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       name: 'Karta Płatnicza',
       description: 'Visa, Mastercard, Apple Pay, Google Pay',
       icon: CreditCard,
+      gatewayBadge: 'Stripe Sandbox',
       accentColor: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
     },
     {
       id: 'payu',
-      name: 'PayU / Przelewy24',
+      name: 'Przelewy24 / PayU',
       description: 'Szybki przelew internetowy ze swojego banku',
       icon: ShieldCheck,
+      gatewayBadge: 'Stripe Sandbox',
       accentColor: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
     },
     {
@@ -56,8 +60,8 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         <label className="block text-xs font-black uppercase tracking-wider text-slate-300">
           Wybierz Sposób Płatności
         </label>
-        <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3 text-emerald-400" /> Szyfrowanie SSL 256-bit
+        <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+          <ShieldCheck className="w-3 h-3 text-emerald-400" /> Stripe Sandbox (PLN)
         </span>
       </div>
 
@@ -84,7 +88,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span
                     className={`text-xs font-black uppercase tracking-wide ${
                       isSelected ? 'text-amber-300' : 'text-white'
@@ -97,6 +101,11 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                       {method.badge}
                     </span>
                   )}
+                  {method.gatewayBadge && (
+                    <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[8px] font-bold uppercase tracking-wider">
+                      {method.gatewayBadge}
+                    </span>
+                  )}
                 </div>
                 <p className="text-[10px] text-slate-400 mt-0.5 leading-snug truncate">
                   {method.description}
@@ -106,6 +115,18 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           );
         })}
       </div>
+
+      {selectedMethod !== 'reception' && (
+        <div className="p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-300/90 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>Tryb testowy Stripe aktywny: symulacja płatności kartą testową lub BLIK</span>
+          </div>
+          <span className="text-[9px] font-mono font-bold uppercase tracking-wider bg-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-200">
+            TEST MODE
+          </span>
+        </div>
+      )}
     </div>
   );
 };

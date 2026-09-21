@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gravitacja-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: gravitacja_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: gravitacja-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/gravitacja_db
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+
+      CLIENT_URL: http://localhost:5173
+    ports:
+      - "3000:3000"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: gravitacja-frontend
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:

@@ -186,8 +186,9 @@ export default function Step3ContactDetails({
           ) : paymentMethod === 'reception' ? (
             <span>Zarezerwuj i zapłać na miejscu ({breakdown.totalPrice} PLN) →</span>
           ) : (
-            <span>Zapłać i zarezerwuj ({breakdown.totalPrice} PLN) →</span>
+            <span>Przejdź do płatności Stripe ({breakdown.totalPrice} PLN) →</span>
           )}
+
         </button>
       </div>
     </form>
