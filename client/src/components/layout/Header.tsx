@@ -6,7 +6,7 @@ import {
   X,
   ArrowUpRight,
   Sparkles,
-  ShieldCheck,
+
   MapPin,
   ChevronDown,
   Briefcase,
@@ -35,15 +35,7 @@ const InstagramIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) =>
   </svg>
 );
 
-interface HeaderProps {
-  currentView?: 'client' | 'admin';
-  onToggleAdminView?: () => void;
-}
-
-export default function Header({
-  currentView = 'client',
-  onToggleAdminView,
-}: HeaderProps) {
+export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { activeSlug, setActiveSlug, openBooking } = useLocationContext();
@@ -231,7 +223,6 @@ export default function Header({
           {/* Logo & Mobile Location Indicator */}
           <div className="relative z-10 flex items-center gap-3">
             <Logo onClick={() => {
-              if (onToggleAdminView && currentView === 'admin') onToggleAdminView();
               setActiveSlug(null);
               navigate('/');
             }} />
@@ -287,7 +278,6 @@ export default function Header({
                 <button
                   key={item.path}
                   onClick={() => {
-                    if (onToggleAdminView && currentView === 'admin') onToggleAdminView();
                     if (item.path === '/') setActiveSlug(null);
                     navigate(item.path);
                   }}
@@ -307,21 +297,7 @@ export default function Header({
               );
             })}
 
-            {/* Admin Panel Active Badge */}
-            {currentView === 'admin' && (
-              <button
-                onClick={onToggleAdminView}
-                className="relative px-3.5 py-2 rounded-xl text-[11px] font-black tracking-wider transition-all duration-300 uppercase cursor-pointer flex items-center gap-1.5 text-white"
-              >
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 shadow-[0_0_20px_rgba(245,158,11,0.6)]"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-                <ShieldCheck className="w-3.5 h-3.5 relative z-10" />
-                <span className="relative z-10 drop-shadow-md">Recepcja</span>
-              </button>
-            )}
+
           </motion.nav>
 
           {/* Desktop CTA Button */}
@@ -387,7 +363,6 @@ export default function Header({
                       <button
                         key={item.path}
                         onClick={() => {
-                          if (onToggleAdminView && currentView === 'admin') onToggleAdminView();
                           if (item.path === '/') setActiveSlug(null);
                           navigate(item.path);
                           setMobileOpen(false);

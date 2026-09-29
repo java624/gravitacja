@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -13,14 +12,11 @@ import MenuPage from './pages/MenuPage';
 import ClubPage from './pages/ClubPage';
 import JobsPage from './pages/JobsPage';
 import ContactPage from './pages/ContactPage';
-import AdminPage from './pages/AdminPage';
 import BookingModal from './components/booking/BookingModal';
 import BirthdayModal from './components/modals/BirthdayModal';
 import CorporateModal from './components/modals/CorporateModal';
 import MenuModal from './components/modals/MenuModal';
 import StripePaymentReturnHandler from './components/booking/StripePaymentReturnHandler';
-import { AdminLoginModal } from './components/admin/auth/AdminLoginModal';
-import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { useLocationContext } from './context/LocationContext';
 
 
@@ -33,84 +29,47 @@ function AppContent() {
     setActiveSlug,
   } = useLocationContext();
 
-  const { isAuthenticated } = useAdminAuth();
-
-  const [currentView, setCurrentView] = useState<'client' | 'admin'>('client');
-  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState<boolean>(false);
-
-  const handleAdminSuccess = () => {
-    setIsAdminAuthModalOpen(false);
-    setCurrentView('admin');
-  };
-
-  const handleToggleAdminView = () => {
-    if (currentView === 'admin') {
-      setCurrentView('client');
-    } else {
-      if (isAuthenticated) {
-        setCurrentView('admin');
-      } else {
-        setIsAdminAuthModalOpen(true);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#020308] text-white flex flex-col justify-between relative font-sans selection:bg-cyan-500 selection:text-black md:cursor-none">
       {/* Dynamic WebGL & Ambient Neon Backdrop */}
       <BackgroundGlow />
 
       {/* Main Navigation Header with Top-Bar & Location Selector */}
-      <Header
-        currentView={currentView}
-        onToggleAdminView={handleToggleAdminView}
-      />
+      <Header />
 
       {/* Main Content Area with top spacing for fixed header */}
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex-1 w-full">
-        {currentView === 'admin' ? (
-          <AdminPage onOpenAuthModal={() => setIsAdminAuthModalOpen(true)} />
-        ) : (
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
 
-            {/* Location-isolated sub-routes */}
-            <Route path="/:locationSlug/cennik" element={<PricingPage />} />
-            <Route path="/:locationSlug/rezerwacje" element={<ReservationsPage />} />
-            <Route path="/:locationSlug/dzieci" element={<KidsBirthdaysPage />} />
-            <Route path="/:locationSlug/firmy" element={<ForCompaniesPage />} />
-            <Route path="/:locationSlug/menu" element={<MenuPage />} />
-            <Route path="/:locationSlug/klub" element={<ClubPage />} />
-            <Route path="/:locationSlug/praca" element={<JobsPage />} />
-            <Route path="/:locationSlug/kontakt" element={<ContactPage />} />
-            <Route path="/:locationSlug" element={<LocationPage />} />
+          {/* Location-isolated sub-routes */}
+          <Route path="/:locationSlug/cennik" element={<PricingPage />} />
+          <Route path="/:locationSlug/rezerwacje" element={<ReservationsPage />} />
+          <Route path="/:locationSlug/dzieci" element={<KidsBirthdaysPage />} />
+          <Route path="/:locationSlug/firmy" element={<ForCompaniesPage />} />
+          <Route path="/:locationSlug/menu" element={<MenuPage />} />
+          <Route path="/:locationSlug/klub" element={<ClubPage />} />
+          <Route path="/:locationSlug/praca" element={<JobsPage />} />
+          <Route path="/:locationSlug/kontakt" element={<ContactPage />} />
+          <Route path="/:locationSlug" element={<LocationPage />} />
 
-            {/* Direct sub-route fallbacks without location prefix */}
-            <Route path="/cennik" element={<PricingPage />} />
-            <Route path="/rezerwacje" element={<ReservationsPage />} />
-            <Route path="/dzieci" element={<KidsBirthdaysPage />} />
-            <Route path="/firmy" element={<ForCompaniesPage />} />
-            <Route path="/menu" element={<MenuPage />} />
-            <Route path="/klub" element={<ClubPage />} />
-            <Route path="/praca" element={<JobsPage />} />
-            <Route path="/kontakt" element={<ContactPage />} />
-          </Routes>
-        )}
+          {/* Direct sub-route fallbacks without location prefix */}
+          <Route path="/cennik" element={<PricingPage />} />
+          <Route path="/rezerwacje" element={<ReservationsPage />} />
+          <Route path="/dzieci" element={<KidsBirthdaysPage />} />
+          <Route path="/firmy" element={<ForCompaniesPage />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/klub" element={<ClubPage />} />
+          <Route path="/praca" element={<JobsPage />} />
+          <Route path="/kontakt" element={<ContactPage />} />
+        </Routes>
       </main>
 
-      {/* Global 4-Column Footer with discreet employee login link */}
+      {/* Global 4-Column Footer */}
       <Footer
         onSelectCity={(city) => {
           if (city) {
             setActiveSlug(city as any);
-          }
-          setCurrentView('client');
-        }}
-        onOpenAdminAuth={() => {
-          if (isAuthenticated) {
-            setCurrentView('admin');
-          } else {
-            setIsAdminAuthModalOpen(true);
           }
         }}
       />
@@ -130,22 +89,10 @@ function AppContent() {
 
       {/* Stripe Return / Confirmation Handler */}
       <StripePaymentReturnHandler />
-
-
-      {/* Role-Based Admin Authentication Modal */}
-      <AdminLoginModal
-        isOpen={isAdminAuthModalOpen}
-        onClose={() => setIsAdminAuthModalOpen(false)}
-        onSuccess={handleAdminSuccess}
-      />
     </div>
   );
 }
 
 export default function App() {
-  return (
-    <AdminAuthProvider>
-      <AppContent />
-    </AdminAuthProvider>
-  );
+  return <AppContent />;
 }

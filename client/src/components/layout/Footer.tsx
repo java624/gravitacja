@@ -1,14 +1,13 @@
-import { ChevronRight, MapPin, ShieldCheck, Gamepad2, Clock, Sparkles, Lock } from 'lucide-react';
+import { ChevronRight, MapPin, ShieldCheck, Gamepad2, Clock, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../ui/Logo';
 import { FOOTER_SECTIONS } from '../../data/navigationData';
 
 interface FooterProps {
   onSelectCity?: (id: string) => void;
-  onOpenAdminAuth?: () => void;
 }
 
-export default function Footer({ onSelectCity, onOpenAdminAuth }: FooterProps) {
+export default function Footer({ onSelectCity }: FooterProps) {
   const navigate = useNavigate();
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -106,26 +105,13 @@ export default function Footer({ onSelectCity, onOpenAdminAuth }: FooterProps) {
 
         </div>
 
-        {/* Bottom copyright row with employee access trigger */}
+        {/* Bottom copyright row — employee access removed */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
           <p>© 2026 Centrum Rozrywki Gravitacja. Wszystkie prawa zastrzeżone.</p>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-              <span>Nowoczesna rozrywka w Twoim mieście</span>
-            </div>
-
-            {onOpenAdminAuth && (
-              <button
-                onClick={onOpenAdminAuth}
-                className="text-[10px] text-slate-600 hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer underline underline-offset-2"
-                title="Dostęp tylko dla pracowników"
-              >
-                <Lock className="w-3 h-3" />
-                <span>Strefa Pracownika</span>
-              </button>
-            )}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+            <span>Nowoczesna rozrywka w Twoim mieście</span>
           </div>
         </div>
       </div>
