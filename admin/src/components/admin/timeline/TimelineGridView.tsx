@@ -37,6 +37,23 @@ const parseTimeToHours = (timeStr: string): number => {
   return (h || 0) + (m || 0) / 60;
 };
 
+const extractNumber = (str: string): number => {
+  const match = str.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+};
+
+// Formats display names strictly as "Tor X" or "Stół X"
+const formatResourceDisplayName = (resource: Resource): string => {
+  const num = extractNumber(resource.name) || extractNumber(resource.id);
+  if (resource.type === 'billiards') {
+    return num ? `Stół ${num}` : 'Stół 1';
+  }
+  if (resource.type === 'bowling') {
+    return num ? `Tor ${num}` : resource.name || 'Tor 1';
+  }
+  return resource.name;
+};
+
 export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   resources,
   reservations,
@@ -53,11 +70,32 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const isToday = selectedDate === todayStr;
 
-  // Filter resources
-  const filteredResources = useMemo(() => {
-    return resources.filter((res) => {
+  // Filter & sort resources: 1) all bowling (Tor 1..12) first, 2) all billiards (Stół 1..X) next
+  const sortedAndFilteredResources = useMemo(() => {
+    const filtered = resources.filter((res) => {
       if (resourceFilter === 'all') return true;
       return res.type === resourceFilter;
+    });
+
+    return [...filtered].sort((a, b) => {
+      // 1. Group by category: bowling first, then billiards, then others
+      const typeRank = (t: string) => {
+        if (t === 'bowling') return 1;
+        if (t === 'billiards') return 2;
+        return 3;
+      };
+
+      const rankDiff = typeRank(a.type) - typeRank(b.type);
+      if (rankDiff !== 0) return rankDiff;
+
+      // 2. Numerical sort by number: Tor 1..12 or Stół 1..2
+      const numA = extractNumber(a.name) || extractNumber(a.id);
+      const numB = extractNumber(b.name) || extractNumber(b.id);
+      if (numA !== numB) {
+        return numA - numB;
+      }
+
+      return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
   }, [resources, resourceFilter]);
 
@@ -239,11 +277,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
         <div className="min-w-[1200px]">
           {/* Header Row: Hours Timeline */}
           <div className="flex border-b border-slate-800 bg-slate-950/80 sticky top-0 z-20">
-            {/* Sticky Resource Title Cell */}
-            <div className="w-48 shrink-0 px-4 py-3 font-semibold text-xs text-slate-400 uppercase tracking-wider border-r border-slate-800 bg-slate-950 sticky left-0 z-30 flex items-center justify-between">
-              <span>Zasób / Tor</span>
+            {/* Sticky Resource Title Cell (Updated Header: ZASÓB (Tor / Stół)) */}
+            <div className="w-48 shrink-0 px-4 py-3 font-semibold text-xs text-slate-300 uppercase tracking-wider border-r border-slate-800 bg-slate-950 sticky left-0 z-30 flex items-center justify-between">
+              <span>ZASÓB (Tor / Stół)</span>
               <span className="text-[10px] text-slate-500 font-mono">
-                {filteredResources.length}
+                {sortedAndFilteredResources.length}
               </span>
             </div>
 
@@ -275,117 +313,139 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
               </div>
             )}
 
-            {filteredResources.length === 0 ? (
+            {sortedAndFilteredResources.length === 0 ? (
               <div className="p-12 text-center text-slate-500 text-sm">
                 Brak zasobów spełniających kryteria.
               </div>
             ) : (
-              filteredResources.map((resource) => {
+              sortedAndFilteredResources.map((resource, index) => {
                 // Find all bookings for this resource on this day
                 const resBookings = dayReservations.filter((b) => b.resource_id === resource.id);
                 const isBowling = resource.type === 'bowling';
+                const displayName = formatResourceDisplayName(resource);
+
+                // Check if this is the first billiard table when viewing all resources
+                const isFirstBilliards =
+                  resourceFilter === 'all' &&
+                  resource.type === 'billiards' &&
+                  (index === 0 || sortedAndFilteredResources[index - 1]?.type === 'bowling');
 
                 return (
-                  <div key={resource.id} className="flex group hover:bg-slate-800/20 transition-colors min-h-[58px]">
-                    {/* Sticky Resource Info Cell */}
-                    <div className="w-48 shrink-0 px-4 py-2.5 border-r border-slate-800 bg-slate-900 sticky left-0 z-10 flex items-center gap-3">
-                      <div className={`p-2 rounded-xl border ${
-                        isBowling
-                          ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                          : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      }`}>
-                        {isBowling ? <CircleDot className="w-4 h-4" /> : <Dices className="w-4 h-4" />}
-                      </div>
-
-                      <div className="overflow-hidden">
-                        <div className="font-semibold text-xs text-slate-100 truncate flex items-center gap-1.5">
-                          <span>{resource.name}</span>
+                  <React.Fragment key={resource.id}>
+                    {/* Visual Section Divider between Bowling and Billiards */}
+                    {isFirstBilliards && (
+                      <div className="flex border-y border-slate-800/90 bg-slate-950 text-xs font-semibold">
+                        <div className="w-48 shrink-0 px-4 py-2 border-r border-slate-800 bg-slate-950 sticky left-0 z-10 flex items-center gap-2 text-emerald-400 tracking-wider">
+                          <Dices className="w-3.5 h-3.5" />
+                          <span>STOŁY BILARDOWE</span>
                         </div>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
-                          {isBowling ? 'Tor kręgli' : 'Bilard'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Timeline Hour Grid Cells + Rendered Reservations */}
-                    <div className="flex-1 grid grid-cols-14 relative bg-slate-900/40">
-                      {/* Hour Grid Slots (Background) */}
-                      {HOURS_LIST.map((hour) => (
-                        <div
-                          key={hour}
-                          onClick={() => onQuickBook && onQuickBook(resource.id, `${hour}:00`)}
-                          className="border-r border-slate-800/50 last:border-r-0 hover:bg-slate-800/40 transition-colors relative group/slot cursor-pointer flex items-center justify-center"
-                          title={`Wolny termin: ${resource.name}, godz. ${hour}:00. Kliknij, aby zarezerwować.`}
-                        >
-                          <Plus className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/slot:opacity-100 transition-opacity" />
+                        <div className="flex-1 px-4 py-2 text-slate-500 text-[11px] font-medium flex items-center bg-slate-950/70">
+                          Strefa Stołów Bilardowych
                         </div>
-                      ))}
+                      </div>
+                    )}
 
-                      {/* Rendered Bookings on top of timeline */}
-                      {resBookings.map((booking) => {
-                        const startDec = parseTimeToHours(booking.start_time);
-                        const endDec = parseTimeToHours(booking.end_time);
+                    <div className="flex group hover:bg-slate-800/20 transition-colors min-h-[58px]">
+                      {/* Sticky Resource Info Cell */}
+                      <div className="w-48 shrink-0 px-4 py-2.5 border-r border-slate-800 bg-slate-900 sticky left-0 z-10 flex items-center gap-3">
+                        <div className={`p-2 rounded-xl border ${
+                          isBowling
+                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        }`}>
+                          {isBowling ? <CircleDot className="w-4 h-4" /> : <Dices className="w-4 h-4" />}
+                        </div>
 
-                        // Clamp to grid range
-                        const clampedStart = Math.max(START_HOUR, startDec);
-                        const clampedEnd = Math.min(END_HOUR, Math.max(clampedStart + 0.5, endDec));
-
-                        const leftPercent = ((clampedStart - START_HOUR) / HOURS_COUNT) * 100;
-                        const widthPercent = ((clampedEnd - clampedStart) / HOURS_COUNT) * 100;
-
-                        const isPending = booking.status === 'pending';
-
-                        return (
-                          <div
-                            key={booking.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelectReservation(booking);
-                            }}
-                            style={{
-                              left: `${leftPercent}%`,
-                              width: `${widthPercent}%`,
-                            }}
-                            className={`absolute top-1.5 bottom-1.5 mx-0.5 rounded-xl border px-2.5 py-1 cursor-pointer transition-all duration-150 z-10 flex flex-col justify-center overflow-hidden shadow-sm ${
-                              isPending
-                                ? 'bg-amber-400/20 hover:bg-amber-400/30 border-amber-400 text-amber-200'
-                                : 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-400 text-emerald-200'
-                            }`}
-                            title={`Rezerwacja: ${booking.client_name} (${booking.start_time} - ${booking.end_time}) - Kliknij, aby otworzyć szczegóły`}
-                          >
-                            <div className="flex items-center justify-between gap-1 leading-tight">
-                              <span className="font-bold text-xs truncate">
-                                {booking.client_name}
-                              </span>
-                              <span className="shrink-0 text-[10px] font-mono font-semibold px-1 rounded bg-black/40">
-                                {booking.start_time}-{booking.end_time}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center justify-between gap-1 text-[10px] mt-0.5 opacity-90">
-                              <span className="flex items-center gap-1">
-                                {isPending ? (
-                                  <>
-                                    <Clock className="w-3 h-3 text-amber-300 animate-pulse" />
-                                    <span className="font-medium text-amber-300">Oczekuje</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-300" />
-                                    <span>Aktywna</span>
-                                  </>
-                                )}
-                              </span>
-                              <span className="flex items-center gap-0.5 font-mono">
-                                <Users className="w-3 h-3" />
-                                {booking.guests_count} os.
-                              </span>
-                            </div>
+                        <div className="overflow-hidden">
+                          <div className="font-semibold text-xs text-slate-100 truncate flex items-center gap-1.5">
+                            <span>{displayName}</span>
                           </div>
-                        );
-                      })}
+                          <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                            {isBowling ? 'TOR KRĘGLI' : 'BILARD'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Timeline Hour Grid Cells + Rendered Reservations */}
+                      <div className="flex-1 grid grid-cols-14 relative bg-slate-900/40">
+                        {/* Hour Grid Slots (Background) */}
+                        {HOURS_LIST.map((hour) => (
+                          <div
+                            key={hour}
+                            onClick={() => onQuickBook && onQuickBook(resource.id, `${hour}:00`)}
+                            className="border-r border-slate-800/50 last:border-r-0 hover:bg-slate-800/40 transition-colors relative group/slot cursor-pointer flex items-center justify-center"
+                            title={`Wolny termin: ${displayName}, godz. ${hour}:00. Kliknij, aby zarezerwować.`}
+                          >
+                            <Plus className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/slot:opacity-100 transition-opacity" />
+                          </div>
+                        ))}
+
+                        {/* Rendered Bookings on top of timeline */}
+                        {resBookings.map((booking) => {
+                          const startDec = parseTimeToHours(booking.start_time);
+                          const endDec = parseTimeToHours(booking.end_time);
+
+                          // Clamp to grid range
+                          const clampedStart = Math.max(START_HOUR, startDec);
+                          const clampedEnd = Math.min(END_HOUR, Math.max(clampedStart + 0.5, endDec));
+
+                          const leftPercent = ((clampedStart - START_HOUR) / HOURS_COUNT) * 100;
+                          const widthPercent = ((clampedEnd - clampedStart) / HOURS_COUNT) * 100;
+
+                          const isPending = booking.status === 'pending';
+
+                          return (
+                            <div
+                              key={booking.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectReservation(booking);
+                              }}
+                              style={{
+                                left: `${leftPercent}%`,
+                                width: `${widthPercent}%`,
+                              }}
+                              className={`absolute top-1.5 bottom-1.5 mx-0.5 rounded-xl border px-2.5 py-1 cursor-pointer transition-all duration-150 z-10 flex flex-col justify-center overflow-hidden shadow-sm ${
+                                isPending
+                                  ? 'bg-amber-400/20 hover:bg-amber-400/30 border-amber-400 text-amber-200'
+                                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-400 text-emerald-200'
+                              }`}
+                              title={`Rezerwacja: ${booking.client_name} (${booking.start_time} - ${booking.end_time}) - Kliknij, aby otworzyć szczegóły`}
+                            >
+                              <div className="flex items-center justify-between gap-1 leading-tight">
+                                <span className="font-bold text-xs truncate">
+                                  {booking.client_name}
+                                </span>
+                                <span className="shrink-0 text-[10px] font-mono font-semibold px-1 rounded bg-black/40">
+                                  {booking.start_time}-{booking.end_time}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-1 text-[10px] mt-0.5 opacity-90">
+                                <span className="flex items-center gap-1">
+                                  {isPending ? (
+                                    <>
+                                      <Clock className="w-3 h-3 text-amber-300 animate-pulse" />
+                                      <span className="font-medium text-amber-300">Oczekuje</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-300" />
+                                      <span>Aktywna</span>
+                                    </>
+                                  )}
+                                </span>
+                                <span className="flex items-center gap-0.5 font-mono">
+                                  <Users className="w-3 h-3" />
+                                  {booking.guests_count} os.
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 );
               })
             )}

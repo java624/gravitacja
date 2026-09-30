@@ -16,18 +16,18 @@ export const INITIAL_MOCK_RESOURCES: Resource[] = [
   { id: 'kat-b10', name: 'Tor 10', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-b11', name: 'Tor 11', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-b12', name: 'Tor 12', type: 'bowling', location_slug: 'katowice', is_active: true },
-  { id: 'kat-p1', name: 'Stół Bilardowy #1', type: 'billiards', location_slug: 'katowice', is_active: true },
-  { id: 'kat-p2', name: 'Stół Bilardowy #2', type: 'billiards', location_slug: 'katowice', is_active: true },
+  { id: 'kat-p1', name: 'Stół 1', type: 'billiards', location_slug: 'katowice', is_active: true },
+  { id: 'kat-p2', name: 'Stół 2', type: 'billiards', location_slug: 'katowice', is_active: true },
 
   // Jaworzno
-  { id: 'jaw-b1', name: 'Tor 1 Cosmic', type: 'bowling', location_slug: 'jaworzno', is_active: true },
-  { id: 'jaw-b2', name: 'Tor 2 Cosmic', type: 'bowling', location_slug: 'jaworzno', is_active: true },
-  { id: 'jaw-p1', name: 'Stół Bilardowy #1', type: 'billiards', location_slug: 'jaworzno', is_active: true },
+  { id: 'jaw-b1', name: 'Tor 1', type: 'bowling', location_slug: 'jaworzno', is_active: true },
+  { id: 'jaw-b2', name: 'Tor 2', type: 'bowling', location_slug: 'jaworzno', is_active: true },
+  { id: 'jaw-p1', name: 'Stół 1', type: 'billiards', location_slug: 'jaworzno', is_active: true },
 
   // Poznań
-  { id: 'pozn-b1', name: 'Tor 1 Arcade', type: 'bowling', location_slug: 'poznan', is_active: true },
-  { id: 'pozn-b2', name: 'Tor 2 Arcade', type: 'bowling', location_slug: 'poznan', is_active: true },
-  { id: 'pozn-p1', name: 'Stół Bilardowy #1', type: 'billiards', location_slug: 'poznan', is_active: true },
+  { id: 'pozn-b1', name: 'Tor 1', type: 'bowling', location_slug: 'poznan', is_active: true },
+  { id: 'pozn-b2', name: 'Tor 2', type: 'bowling', location_slug: 'poznan', is_active: true },
+  { id: 'pozn-p1', name: 'Stół 1', type: 'billiards', location_slug: 'poznan', is_active: true },
 ];
 
 const TODAY_DATE = new Date().toISOString().split('T')[0];
@@ -157,7 +157,16 @@ export const INITIAL_MOCK_RESERVATIONS: Reservation[] = [
 export const getMockReservations = (): Reservation[] => {
   try {
     const data = localStorage.getItem('gravitacja_mock_reservations');
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed: Reservation[] = JSON.parse(data);
+      return parsed.map((res) => {
+        const found = INITIAL_MOCK_RESOURCES.find((r) => r.id === res.resource_id);
+        if (found) {
+          return { ...res, resource: found };
+        }
+        return res;
+      });
+    }
   } catch (e) {
     console.error('Error reading mock reservations:', e);
   }
