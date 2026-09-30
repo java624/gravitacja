@@ -19,33 +19,29 @@ export const ReceptionStats: React.FC<ReceptionStatsProps> = ({
       title: 'Wszystkie Rezerwacje',
       value: totalCount,
       icon: Calendar,
-      color: 'from-blue-500/20 to-indigo-500/10',
-      border: 'border-blue-500/30',
-      textColor: 'text-blue-400',
+      iconColor: 'text-slate-300',
+      badgeColor: 'bg-slate-800 text-slate-300 border-slate-700',
     },
     {
       title: 'Oczekujące na Potwierdzenie',
       value: pendingCount,
       icon: Clock,
-      color: 'from-amber-500/20 to-orange-500/10',
-      border: 'border-amber-500/30',
-      textColor: 'text-amber-400',
+      iconColor: 'text-amber-400',
+      badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-800/60',
     },
     {
-      title: 'Potwierdzone',
+      title: 'Potwierdzone / Aktywne',
       value: confirmedCount,
       icon: CheckCircle2,
-      color: 'from-emerald-500/20 to-teal-500/10',
-      border: 'border-emerald-500/30',
-      textColor: 'text-emerald-400',
+      iconColor: 'text-emerald-400',
+      badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60',
     },
     {
       title: 'Anulowane',
       value: cancelledCount,
       icon: XCircle,
-      color: 'from-rose-500/20 to-red-500/10',
-      border: 'border-rose-500/30',
-      textColor: 'text-rose-400',
+      iconColor: 'text-rose-400',
+      badgeColor: 'bg-rose-950/40 text-rose-300 border-rose-800/60',
     },
   ];
 
@@ -56,18 +52,18 @@ export const ReceptionStats: React.FC<ReceptionStatsProps> = ({
         return (
           <div
             key={idx}
-            className={`p-4 sm:p-5 rounded-2xl bg-gradient-to-br ${card.color} border ${card.border} backdrop-blur-xl shadow-lg flex items-center justify-between`}
+            className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-between"
           >
             <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide block mb-1">
                 {card.title}
               </span>
-              <span className={`text-2xl sm:text-3xl font-black ${card.textColor}`}>
+              <span className="text-2xl sm:text-3xl font-bold text-slate-100 font-mono">
                 {card.value}
               </span>
             </div>
-            <div className={`p-3 rounded-xl bg-white/5 border border-white/10 ${card.textColor}`}>
-              <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className={`p-2.5 rounded-xl border ${card.badgeColor}`}>
+              <Icon className={`w-5 h-5 ${card.iconColor}`} />
             </div>
           </div>
         );

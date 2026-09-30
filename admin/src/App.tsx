@@ -17,51 +17,44 @@ function AdminApp() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#020308] text-white flex flex-col items-center justify-center p-6">
-        {/* Ambient background glows */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/8 rounded-full blur-[120px]" />
-        </div>
-
-        <div className="relative z-10 text-center space-y-8 max-w-md w-full">
-          {/* Logo */}
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
+        <div className="text-center space-y-6 max-w-sm w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
+          {/* Logo & Header */}
           <div className="space-y-2">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-2xl font-black uppercase tracking-[0.3em] text-white">
-                GRAVI<span className="text-orange-400">TACJA</span>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-xl font-bold uppercase tracking-widest text-slate-100">
+                GRAWITACJA
               </span>
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Panel Zarządzania
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-medium tracking-wide">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              Panel Administracyjny
             </div>
           </div>
 
           {/* Lock icon */}
-          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mx-auto flex items-center justify-center shadow-[0_0_40px_rgba(245,158,11,0.3)]">
-            <Lock className="w-10 h-10" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 text-slate-300 mx-auto flex items-center justify-center">
+            <Lock className="w-7 h-7" />
           </div>
 
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-white mb-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-100">
               Strefa Pracownika
             </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              To jest wewnętrzny panel zarządzania Grawitacja.<br />
-              Dostęp wyłącznie dla pracowników Recepcji i Właściciela.
+            <p className="text-xs text-slate-400 leading-relaxed mt-1">
+              Wewnętrzny system zarządzania rezerwacjami i obłożeniem.
             </p>
           </div>
 
           <button
             onClick={() => setIsLoginOpen(true)}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40 text-sm font-black uppercase tracking-wider text-white shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:from-amber-400 hover:to-orange-500 transition-all cursor-pointer"
+            className="w-full py-3 rounded-xl bg-slate-100 hover:bg-white text-slate-900 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer shadow-sm"
           >
             Zaloguj się do Panelu
           </button>
 
-          <p className="text-[10px] text-slate-600">
-            © 2026 Centrum Rozrywki Grawitacja • System Wewnętrzny
+          <p className="text-[11px] text-slate-500">
+            © 2026 Centrum Rozrywki Grawitacja
           </p>
         </div>
 
@@ -75,38 +68,31 @@ function AdminApp() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020308] text-white">
-      {/* Ambient glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[300px] bg-amber-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-orange-600/5 rounded-full blur-[100px]" />
-      </div>
-
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Top Admin Bar */}
-      <header className="relative z-20 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl px-6 py-3">
+      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-lg font-black uppercase tracking-widest text-white">
-              GRAVI<span className="text-orange-400">TACJA</span>
+            <span className="text-base font-bold uppercase tracking-wider text-slate-100">
+              GRAWITACJA
             </span>
-            <div className="h-5 w-px bg-white/20" />
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest">
-              <ShieldCheck className="w-3 h-3" />
-              {role === 'owner' ? 'Właściciel' : 'Recepcja'}
+            <div className="h-4 w-px bg-slate-700" />
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-medium tracking-wide">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              {role === 'owner' ? 'Właściciel / Zarząd' : 'Recepcja'}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
               <span>System online</span>
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/30 transition-all text-xs font-bold cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-xs font-medium cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Wyloguj</span>
@@ -116,7 +102,7 @@ function AdminApp() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {role === 'reception' ? (
           <ReceptionDashboard />
         ) : (

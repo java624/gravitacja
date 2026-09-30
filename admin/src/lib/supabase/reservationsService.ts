@@ -11,6 +11,11 @@ import {
   SupabaseDbError,
   describeSupabaseError,
 } from './supabaseErrors';
+import {
+  getMockReservations,
+  saveMockReservations,
+  INITIAL_MOCK_RESOURCES,
+} from './mockStore';
 
 type SupabaseClientLike = NonNullable<typeof supabase>;
 
@@ -45,6 +50,17 @@ export async function checkTimeCollision(
   endTime: string,
   ignoreReservationId?: string
 ): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    const list = getMockReservations();
+    return list.some((res) => {
+      if (res.resource_id !== resourceId) return false;
+      if (res.reservation_date !== date) return false;
+      if (res.status === 'cancelled') return false;
+      if (ignoreReservationId && res.id === ignoreReservationId) return false;
+      return isTimeOverlapping(startTime, endTime, res.start_time, res.end_time);
+    });
+  }
+
   const client = ensureSupabaseReady();
 
   const { data, error } = await client
@@ -100,8 +116,6 @@ async function loadResource(
  * fałszywego "rezerwacja przyjęta", której recepcja i tak by nie zobaczyła.
  */
 export async function createReservation(input: CreateReservationInput): Promise<Reservation> {
-  const client = ensureSupabaseReady();
-
   const hasCollision = await checkTimeCollision(
     input.resource_id,
     input.reservation_date,
@@ -114,6 +128,34 @@ export async function createReservation(input: CreateReservationInput): Promise<
   }
 
   const status: ReservationStatus = input.payment_status === 'paid' ? 'confirmed' : 'pending';
+
+  if (!isSupabaseConfigured || !supabase) {
+    const list = getMockReservations();
+    const resObj = INITIAL_MOCK_RESOURCES.find((r) => r.id === input.resource_id);
+    const newRes: Reservation = {
+      id: 'res-' + Date.now(),
+      resource_id: input.resource_id,
+      location_slug: input.location_slug,
+      client_name: input.client_name,
+      client_phone: input.client_phone,
+      client_email: input.client_email,
+      reservation_date: input.reservation_date,
+      start_time: input.start_time,
+      end_time: input.end_time,
+      guests_count: input.guests_count,
+      status,
+      total_price: input.total_price ?? undefined,
+      payment_method: input.payment_method ?? undefined,
+      payment_status: input.payment_status ?? (input.payment_method === 'reception' ? 'pending' : 'paid'),
+      created_at: new Date().toISOString(),
+      resource: resObj,
+    };
+    list.unshift(newRes);
+    saveMockReservations(list);
+    return newRes;
+  }
+
+  const client = ensureSupabaseReady();
 
   const { data, error } = await client
     .from('reservations')
@@ -185,11 +227,33 @@ async function attachResources(
 
 /**
  * Lista rezerwacji dla panelu (recepcja / właściciel).
- *
- * W trybie Supabase błąd zapytania jest rzucany dalej - recepcja musi zobaczyć
- * przyczynę, a nie cicho podłożone rezerwacje demonstracyjne z localStorage.
  */
 export async function fetchReservations(filters?: ReservationFilter): Promise<Reservation[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    let results = getMockReservations();
+    if (filters?.location_slug && filters.location_slug !== 'all') {
+      results = results.filter((r) => r.location_slug === filters.location_slug);
+    }
+    if (filters?.date) {
+      results = results.filter((r) => r.reservation_date === filters.date);
+    }
+    if (filters?.status && filters.status !== 'all') {
+      results = results.filter((r) => r.status === filters.status);
+    }
+    if (filters?.searchQuery) {
+      const q = filters.searchQuery.toLowerCase();
+      results = results.filter(
+        (r) =>
+          r.client_name.toLowerCase().includes(q) ||
+          r.client_phone.toLowerCase().includes(q) ||
+          r.client_email.toLowerCase().includes(q) ||
+          r.id.toLowerCase().includes(q) ||
+          (r.resource?.name ?? '').toLowerCase().includes(q)
+      );
+    }
+    return results;
+  }
+
   const client = ensureSupabaseReady();
 
   let query = client
@@ -239,6 +303,17 @@ export async function updateReservationStatus(
   id: string,
   status: ReservationStatus
 ): Promise<Reservation> {
+  if (!isSupabaseConfigured || !supabase) {
+    const list = getMockReservations();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) {
+      throw new Error('Nie znaleziono rezerwacji w trybie demonstracyjnym.');
+    }
+    list[idx] = { ...list[idx], status };
+    saveMockReservations(list);
+    return list[idx];
+  }
+
   const client = ensureSupabaseReady();
 
   const { data, error } = await client
@@ -266,6 +341,13 @@ export async function updateReservationStatus(
 
 /** Usunięcie rezerwacji z bazy (recepcja). */
 export async function deleteReservation(id: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    const list = getMockReservations();
+    const updated = list.filter((r) => r.id !== id);
+    saveMockReservations(updated);
+    return;
+  }
+
   const client = ensureSupabaseReady();
 
   const { error } = await client.from('reservations').delete().eq('id', id);

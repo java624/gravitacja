@@ -54,30 +54,30 @@ export const ReceptionDashboard: React.FC = () => {
       />
 
       {/* Tab Controls */}
-      <div className="flex items-center gap-3 p-1.5 rounded-2xl bg-slate-950/80 border border-white/15 backdrop-blur-xl w-full sm:w-auto self-start shadow-inner">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 w-full sm:w-auto self-start shadow-sm">
         <button
           type="button"
           onClick={() => setActiveTab('reservations')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             activeTab === 'reservations'
-              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
           }`}
         >
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-4 h-4 text-cyan-400" />
           <span>Rezerwacje {assignedLocation.toUpperCase()}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('inquiries')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
             activeTab === 'inquiries'
-              ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.5)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
           }`}
         >
-          <MessageSquare className="w-4 h-4" />
+          <MessageSquare className="w-4 h-4 text-slate-400" />
           <span>Zgłoszenia (Firmy & Urodziny)</span>
         </button>
       </div>

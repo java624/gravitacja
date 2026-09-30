@@ -28,7 +28,7 @@ export const PasswordForm: React.FC<PasswordFormProps> = ({
   };
 
   const getRoleTitle = () => {
-    if (role === 'owner') return 'Logowanie do Panelu Właściciela';
+    if (role === 'owner') return 'Logowanie: Właściciel / Zarząd';
     if (location) return `Recepcja: ${location.toUpperCase()}`;
     return 'Logowanie dla Recepcji';
   };
@@ -48,35 +48,35 @@ export const PasswordForm: React.FC<PasswordFormProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-all text-xs font-bold cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-xs font-medium cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Wstecz
+          <ArrowLeft className="w-3.5 h-3.5" /> Wstecz
         </button>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-white/15 text-xs font-black uppercase text-white">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300">
           {role === 'owner' ? (
             <>
               <Crown className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-amber-300">Owner Access</span>
+              <span>Zarząd</span>
             </>
           ) : (
             <>
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-cyan-300">{location}</span>
+              <span className="uppercase">{location}</span>
             </>
           )}
         </div>
       </div>
 
       <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mx-auto flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.25)] mb-3">
-          <KeyRound className="w-7 h-7" />
+        <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 mx-auto flex items-center justify-center mb-2.5">
+          <KeyRound className="w-6 h-6" />
         </div>
-        <h3 className="text-xl font-black uppercase tracking-tight text-white">
+        <h3 className="text-lg font-bold tracking-tight text-slate-100">
           {getRoleTitle()}
         </h3>
         <p className="text-xs text-slate-400 mt-1">
-          Wprowadź hasło, aby potwierdzić uprawnienia dostępu.
+          Wprowadź hasło pracownika, aby uzyskać dostęp.
         </p>
       </div>
 
@@ -85,9 +85,9 @@ export const PasswordForm: React.FC<PasswordFormProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/40 text-red-300 text-xs flex items-center gap-2.5 shadow-md"
+          className="p-3 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2"
         >
-          <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+          <ShieldAlert className="w-4 h-4 shrink-0 text-rose-400" />
           <span>{errorMessage}</span>
         </motion.div>
       )}
@@ -95,19 +95,19 @@ export const PasswordForm: React.FC<PasswordFormProps> = ({
       {/* Password Input Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Wprowadź hasło..."
             autoFocus
-            className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-slate-900/90 border border-white/20 text-white placeholder-slate-500 font-mono text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all shadow-inner"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-slate-600 transition-colors"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -116,14 +116,14 @@ export const PasswordForm: React.FC<PasswordFormProps> = ({
         <button
           type="submit"
           disabled={!password.trim()}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40 text-xs font-black uppercase tracking-wider text-white shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:from-amber-400 hover:to-orange-500 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-white text-slate-900 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Zaloguj się do systemu
+          Zaloguj się
         </button>
 
-        <div className="text-center pt-2">
+        <div className="text-center pt-1">
           <span className="text-[11px] text-slate-500 font-mono">
-            💡 {getDemoHint()}
+            {getDemoHint()}
           </span>
         </div>
       </form>

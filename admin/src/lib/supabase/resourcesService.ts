@@ -2,6 +2,7 @@ import type { Resource } from '../../types/booking';
 import { supabase, isSupabaseConfigured, supabaseConfigInfo } from './client';
 import { checkTimeCollision } from './reservationsService';
 import { SupabaseDbError, describeSupabaseError } from './supabaseErrors';
+import { INITIAL_MOCK_RESOURCES } from './mockStore';
 
 function ensureSupabaseReady(): NonNullable<typeof supabase> {
   if (!isSupabaseConfigured || !supabase) {
@@ -16,17 +17,20 @@ function ensureSupabaseReady(): NonNullable<typeof supabase> {
 
 /**
  * Aktywne zasoby (tory / stoły) wybranej lokalizacji.
- *
- * W trybie Supabase zwracamy WYŁĄCZNIE zawartość tabeli `resources`.
- * Nie podkładamy zasobów demonstracyjnych, gdy zapytanie się nie uda lub
- * zwróci pustkę - inaczej klient rezerwowałby "zmyślony" tor, którego baza nie
- * zna, a recepcja nigdy by takiej rezerwacji nie zobaczyła.
  */
 export async function fetchResources(location_slug?: string): Promise<Resource[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    let mock = INITIAL_MOCK_RESOURCES.filter((r) => r.is_active);
+    if (location_slug && location_slug !== 'all') {
+      mock = mock.filter((r) => r.location_slug === location_slug);
+    }
+    return mock;
+  }
+
   const client = ensureSupabaseReady();
 
   let query = client.from('resources').select('*').eq('is_active', true);
-  if (location_slug) {
+  if (location_slug && location_slug !== 'all') {
     query = query.eq('location_slug', location_slug);
   }
 

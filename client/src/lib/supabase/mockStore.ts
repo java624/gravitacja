@@ -3,11 +3,19 @@ import type { CorporateInquiry } from '../../types/corporate';
 import type { BirthdayInquiry } from '../../types/birthday';
 
 export const INITIAL_MOCK_RESOURCES: Resource[] = [
-  // Katowice
-  { id: 'kat-b1', name: 'Tor 1 (Glow UV)', type: 'bowling', location_slug: 'katowice', is_active: true },
-  { id: 'kat-b2', name: 'Tor 2 (Glow UV)', type: 'bowling', location_slug: 'katowice', is_active: true },
-  { id: 'kat-b3', name: 'Tor 3 (VIP Line)', type: 'bowling', location_slug: 'katowice', is_active: true },
-  { id: 'kat-b4', name: 'Tor 4 (VIP Line)', type: 'bowling', location_slug: 'katowice', is_active: true },
+  // Katowice - 12 torów kręglarskich + 2 stoły bilardowe
+  { id: 'kat-b1', name: 'Tor 1', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b2', name: 'Tor 2', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b3', name: 'Tor 3', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b4', name: 'Tor 4', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b5', name: 'Tor 5', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b6', name: 'Tor 6', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b7', name: 'Tor 7', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b8', name: 'Tor 8', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b9', name: 'Tor 9', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b10', name: 'Tor 10', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b11', name: 'Tor 11', type: 'bowling', location_slug: 'katowice', is_active: true },
+  { id: 'kat-b12', name: 'Tor 12', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-p1', name: 'Stół Bilardowy #1', type: 'billiards', location_slug: 'katowice', is_active: true },
   { id: 'kat-p2', name: 'Stół Bilardowy #2', type: 'billiards', location_slug: 'katowice', is_active: true },
 

@@ -135,10 +135,18 @@ create policy "Allow public read access to resources"
 --    'on conflict do nothing' nie nadpisuje nazw zmienionych przez obsluge.
 -- ---------------------------------------------------------------------------
 insert into public.resources (id, name, type, location_slug, is_active) values
-  ('kat-b1',  'Tor 1 (Glow UV)',      'bowling',   'katowice', true),
-  ('kat-b2',  'Tor 2 (Glow UV)',      'bowling',   'katowice', true),
-  ('kat-b3',  'Tor 3 (VIP Line)',     'bowling',   'katowice', true),
-  ('kat-b4',  'Tor 4 (VIP Line)',     'bowling',   'katowice', true),
+  ('kat-b1',  'Tor 1',                'bowling',   'katowice', true),
+  ('kat-b2',  'Tor 2',                'bowling',   'katowice', true),
+  ('kat-b3',  'Tor 3',                'bowling',   'katowice', true),
+  ('kat-b4',  'Tor 4',                'bowling',   'katowice', true),
+  ('kat-b5',  'Tor 5',                'bowling',   'katowice', true),
+  ('kat-b6',  'Tor 6',                'bowling',   'katowice', true),
+  ('kat-b7',  'Tor 7',                'bowling',   'katowice', true),
+  ('kat-b8',  'Tor 8',                'bowling',   'katowice', true),
+  ('kat-b9',  'Tor 9',                'bowling',   'katowice', true),
+  ('kat-b10', 'Tor 10',               'bowling',   'katowice', true),
+  ('kat-b11', 'Tor 11',               'bowling',   'katowice', true),
+  ('kat-b12', 'Tor 12',               'bowling',   'katowice', true),
   ('kat-p1',  'Stol Bilardowy #1',    'billiards', 'katowice', true),
   ('kat-p2',  'Stol Bilardowy #2',    'billiards', 'katowice', true),
   ('jaw-b1',  'Tor 1 Cosmic',         'bowling',   'jaworzno', true),
