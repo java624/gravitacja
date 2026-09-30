@@ -4,9 +4,9 @@ import { Gamepad2, Sparkles, GlassWater, Trophy } from 'lucide-react';
 export const FEATURES = [
   {
     id: 'bowling',
-    title: '14 Torów Kręglarskich',
+    title: '12 Torów Kręglarskich',
     subtitle: 'Nowoczesny system Brunswick',
-    description: '14 profesjonalnych torów z automatycznym liczeniem punktów, oświetleniem UV oraz podświetlanymi bandami dla najmłodszych.',
+    description: '12 profesjonalnych torów z automatycznym liczeniem punktów, oświetleniem UV oraz podświetlanymi bandami dla najmłodszych.',
     icon: Trophy,
     color: 'from-orange-500/20 to-red-600/20 border-orange-500/30 text-orange-400',
   },

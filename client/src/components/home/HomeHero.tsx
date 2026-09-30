@@ -75,7 +75,7 @@ export default function HomeHero() {
 
         <div className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-purple-500/15 border border-purple-400/30 text-[10px] sm:text-xs font-black tracking-widest uppercase text-purple-300 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.25)]">
           <Zap className="w-3.5 h-3.5 text-yellow-400" />
-          <span>14 UV-TORÓW</span>
+          <span>12 UV-TORÓW</span>
         </div>
 
         {strikeCount > 0 && (

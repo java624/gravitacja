@@ -12,7 +12,7 @@ export default function KatowicePage({ onOpenBooking }: KatowicePageProps) {
   return (
     <div className="space-y-12 py-4">
       <KatowiceHero onOpenBooking={onOpenBooking} />
-      <LaneDivider label="14 UV-TORÓW • GLOW BOWLING ZONE" badge="KATOWICE" />
+      <LaneDivider label="12 UV-TORÓW • GLOW BOWLING ZONE" badge="KATOWICE" />
       <KatowiceFeatures />
       <LaneDivider label="CENNIK USŁUG • KATOWICE" badge="CENNIK" />
       <KatowicePricing onOpenBooking={onOpenBooking} />

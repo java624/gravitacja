@@ -39,7 +39,7 @@ export const PRICING_DATA: Record<string, LocationPricing> = {
       bowling: {
         id: 'bowling',
         title: 'Kręgle',
-        subtitle: '14 torów UV • Glow Bowling Zone',
+        subtitle: '12 torów UV • Glow Bowling Zone',
         unitText: 'za 1 godz. gry na 1 torze',
         extraNote: 'Podane ceny dotyczą 1 godziny gry na 1 torze. Wypożyczenie obuwia: 3 zł / para.',
         pricing: [
