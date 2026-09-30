@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,8 +10,11 @@ import {
   CircleDot,
   Dices,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 import type { Reservation, Resource } from '../../../types/booking';
+import type { TimelineQuickSelection } from './quickBooking';
+import { extractNumber, formatResourceDisplayName } from './resourceDisplay';
 
 interface TimelineGridViewProps {
   resources: Resource[];
@@ -19,7 +22,8 @@ interface TimelineGridViewProps {
   selectedDate: string;
   onDateChange: (date: string) => void;
   onSelectReservation: (res: Reservation) => void;
-  onQuickBook?: (resourceId: string, time: string) => void;
+  /** Called when the operator clicks / click-&-drags free hour cells of one row. */
+  onQuickBook?: (selection: TimelineQuickSelection) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
   locationName?: string;
@@ -37,22 +41,7 @@ const parseTimeToHours = (timeStr: string): number => {
   return (h || 0) + (m || 0) / 60;
 };
 
-const extractNumber = (str: string): number => {
-  const match = str.match(/\d+/);
-  return match ? parseInt(match[0], 10) : 0;
-};
-
-// Formats display names strictly as "Tor X" or "Stół X"
-const formatResourceDisplayName = (resource: Resource): string => {
-  const num = extractNumber(resource.name) || extractNumber(resource.id);
-  if (resource.type === 'billiards') {
-    return num ? `Stół ${num}` : 'Stół 1';
-  }
-  if (resource.type === 'bowling') {
-    return num ? `Tor ${num}` : resource.name || 'Tor 1';
-  }
-  return resource.name;
-};
+// Resource naming helpers live in ./resourceDisplay (shared with the quick modal)
 
 export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   resources,
@@ -66,6 +55,63 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   locationName,
 }) => {
   const [resourceFilter, setResourceFilter] = useState<'all' | 'bowling' | 'billiards'>('all');
+
+  // ----- Multi-cell (click & drag) selection inside one resource row -----
+  const [drag, setDrag] = useState<{
+    resourceId: string;
+    anchorHour: number;
+    currentHour: number;
+  } | null>(null);
+  const [gridNotice, setGridNotice] = useState<string | null>(null);
+
+  // Short inline hint (e.g. "this hour is already taken") - disappears automatically.
+  useEffect(() => {
+    if (!gridNotice) return;
+    const timer = window.setTimeout(() => setGridNotice(null), 2800);
+    return () => window.clearTimeout(timer);
+  }, [gridNotice]);
+
+  // Selected range while dragging: start hour inclusive, end hour exclusive (17..19 => 17:00-19:00).
+  const dragRange = useMemo(() => {
+    if (!drag) return null;
+    const resource = resources.find((r) => r.id === drag.resourceId);
+    if (!resource) return null;
+    return {
+      resource,
+      startHour: Math.min(drag.anchorHour, drag.currentHour),
+      endHour: Math.max(drag.anchorHour, drag.currentHour) + 1,
+    };
+  }, [drag, resources]);
+
+  const dragLabel = useMemo(() => {
+    if (!dragRange) return null;
+    const { resource, startHour, endHour } = dragRange;
+    const hours = endHour - startHour;
+    return `${formatResourceDisplayName(resource)} • ${startHour}:00 – ${endHour}:00 • ${hours} godz.`;
+  }, [dragRange]);
+
+  // Releasing the mouse button closes the range and hands it to the quick booking modal.
+  useEffect(() => {
+    if (!drag) return;
+
+    const handleMouseUp = () => {
+      const range = dragRange;
+      setDrag(null);
+
+      if (range && onQuickBook) {
+        onQuickBook({
+          resource: range.resource,
+          locationSlug: range.resource.location_slug || 'katowice',
+          date: selectedDate,
+          startHour: range.startHour,
+          endHour: range.endHour,
+        });
+      }
+    };
+
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [drag, dragRange, onQuickBook, selectedDate]);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const isToday = selectedDate === todayStr;
@@ -272,6 +318,20 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
         </div>
       </div>
 
+      {/* Live selection / hint bar for the click & drag booking flow */}
+      {(dragLabel || gridNotice) && (
+        <div
+          className={`px-5 py-2 text-xs border-b flex items-center gap-2 ${
+            gridNotice
+              ? 'border-amber-800/60 bg-amber-950/40 text-amber-200'
+              : 'border-cyan-800/60 bg-cyan-950/40 text-cyan-200'
+          }`}
+        >
+          <Info className="w-3.5 h-3.5 shrink-0" />
+          <span className="font-medium">{gridNotice || `Wybrano: ${dragLabel}`}</span>
+        </div>
+      )}
+
       {/* Main Grid View Container with sticky left column */}
       <div className="relative overflow-x-auto select-none">
         <div className="min-w-[1200px]">
@@ -324,6 +384,23 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
                 const isBowling = resource.type === 'bowling';
                 const displayName = formatResourceDisplayName(resource);
 
+                // Hours already covered by a booking in this row - the drag must not cross them
+                const occupiedHours = new Set<number>();
+                resBookings.forEach((booking) => {
+                  const from = parseTimeToHours(booking.start_time);
+                  const to = parseTimeToHours(booking.end_time);
+                  HOURS_LIST.forEach((hour) => {
+                    if (from < hour + 1 && to > hour) {
+                      occupiedHours.add(hour);
+                    }
+                  });
+                });
+
+                // Range highlighted while the mouse is being dragged over this row
+                const isDragRow = drag?.resourceId === resource.id;
+                const selectionStart = drag ? Math.min(drag.anchorHour, drag.currentHour) : -1;
+                const selectionEnd = drag ? Math.max(drag.anchorHour, drag.currentHour) : -1;
+
                 // Check if this is the first billiard table when viewing all resources
                 const isFirstBilliards =
                   resourceFilter === 'all' &&
@@ -368,17 +445,64 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
 
                       {/* Timeline Hour Grid Cells + Rendered Reservations */}
                       <div className="flex-1 grid grid-cols-14 relative bg-slate-900/40">
-                        {/* Hour Grid Slots (Background) */}
-                        {HOURS_LIST.map((hour) => (
-                          <div
-                            key={hour}
-                            onClick={() => onQuickBook && onQuickBook(resource.id, `${hour}:00`)}
-                            className="border-r border-slate-800/50 last:border-r-0 hover:bg-slate-800/40 transition-colors relative group/slot cursor-pointer flex items-center justify-center"
-                            title={`Wolny termin: ${displayName}, godz. ${hour}:00. Kliknij, aby zarezerwować.`}
-                          >
-                            <Plus className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/slot:opacity-100 transition-opacity" />
-                          </div>
-                        ))}
+                        {/* Hour Grid Slots: click a single cell or click & drag a range */}
+                        {HOURS_LIST.map((hour) => {
+                          const occupied = occupiedHours.has(hour);
+                          const inSelection = isDragRow && hour >= selectionStart && hour <= selectionEnd;
+
+                          return (
+                            <div
+                              key={hour}
+                              onMouseDown={(event) => {
+                                if (event.button !== 0) return;
+                                event.preventDefault();
+
+                                if (occupied) {
+                                  setGridNotice(
+                                    `${displayName}, godz. ${hour}:00 - ${hour + 1}:00 jest już zajęty. Wybierz wolny przedział czasu.`
+                                  );
+                                  return;
+                                }
+
+                                setGridNotice(null);
+                                setDrag({
+                                  resourceId: resource.id,
+                                  anchorHour: hour,
+                                  currentHour: hour,
+                                });
+                              }}
+                              onMouseEnter={() => {
+                                if (!drag || drag.resourceId !== resource.id) return;
+                                if (occupied || drag.currentHour === hour) return;
+                                setDrag({
+                                  resourceId: resource.id,
+                                  anchorHour: drag.anchorHour,
+                                  currentHour: hour,
+                                });
+                              }}
+                              className={`border-r border-slate-800/50 last:border-r-0 transition-colors relative group/slot flex items-center justify-center ${
+                                inSelection
+                                  ? 'bg-cyan-400/25 ring-2 ring-inset ring-cyan-300/80 cursor-crosshair'
+                                  : occupied
+                                    ? 'cursor-not-allowed'
+                                    : 'hover:bg-slate-800/40 cursor-pointer'
+                              }`}
+                              title={
+                                occupied
+                                  ? `${displayName}, godz. ${hour}:00 - ${hour + 1}:00 - zajęte`
+                                  : `Wolny termin: ${displayName}, godz. ${hour}:00. Kliknij lub przeciągnij, aby zarezerwować.`
+                              }
+                            >
+                              {inSelection ? (
+                                <span className="text-[10px] font-mono font-bold text-cyan-100">
+                                  {hour}:00
+                                </span>
+                              ) : (
+                                <Plus className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover/slot:opacity-100 transition-opacity" />
+                              )}
+                            </div>
+                          );
+                        })}
 
                         {/* Rendered Bookings on top of timeline */}
                         {resBookings.map((booking) => {
@@ -464,7 +588,8 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           <span className="text-emerald-300 font-medium">{confirmedCount} potwierdzonych</span>
         </div>
         <div className="text-[11px] text-slate-500">
-          Kliknij na żółtą lub zieloną rezerwację, aby zobaczyć szczegóły i zarządzać statusem.
+          Kliknij na żółtą lub zieloną rezerwację, aby zobaczyć szczegóły. Przeciągnij po wolnych
+          komórkach jednego rzędu, aby zarezerwować kilka godzin naraz.
         </div>
       </div>
     </div>

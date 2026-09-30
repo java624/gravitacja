@@ -7,7 +7,8 @@ import { TimelineGridView } from './timeline/TimelineGridView';
 import AdminFilterBar from './AdminFilterBar';
 import ReservationTable from './ReservationTable';
 import { ReservationDetailModal } from './ReservationDetailModal';
-import BookingModal from '../booking/BookingModal';
+import { QuickAdminReservationModal } from './timeline/QuickAdminReservationModal';
+import type { TimelineQuickSelection } from './timeline/quickBooking';
 
 export type AdminViewMode = 'timeline' | 'table';
 
@@ -54,7 +55,10 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   // Detail Modal & Express Booking states
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isQuickBookingOpen, setIsQuickBookingOpen] = useState(false);
+
+  // Quick reception booking made directly on the timeline grid (cell click / drag range).
+  // null = closed; the full BookingModal behind the header button stays untouched.
+  const [quickSelection, setQuickSelection] = useState<TimelineQuickSelection | null>(null);
 
   // Current active location slug for queries
   const activeLocationSlug = location && location !== 'all' ? location : 'katowice';
@@ -246,7 +250,7 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
           selectedDate={timelineDate}
           onDateChange={setTimelineDate}
           onSelectReservation={handleOpenDetailModal}
-          onQuickBook={() => setIsQuickBookingOpen(true)}
+          onQuickBook={(selection) => setQuickSelection(selection)}
           onRefresh={loadReservations}
           isLoading={isLoading}
           locationName={location?.toUpperCase()}
@@ -291,14 +295,25 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
         onStatusUpdate={handleStatusUpdate}
       />
 
-      {/* Quick Express Booking Modal */}
-      <BookingModal
-        isOpen={isQuickBookingOpen}
-        onClose={() => {
-          setIsQuickBookingOpen(false);
+      {/*
+        Quick booking modal - opened ONLY from a timeline grid selection (click or
+        drag range). Location, entertainment type, resource, date and hours are
+        filled in automatically, the reception only types name / phone / people.
+        The header button "Nowa Rezerwacja" still opens the full BookingModal.
+      */}
+      <QuickAdminReservationModal
+        key={
+          quickSelection
+            ? `${quickSelection.resource.id}-${quickSelection.date}-${quickSelection.startHour}-${quickSelection.endHour}`
+            : 'quick-booking-closed'
+        }
+        selection={quickSelection}
+        isOpen={!!quickSelection}
+        onClose={() => setQuickSelection(null)}
+        onCreated={() => {
+          setQuickSelection(null);
           loadReservations();
         }}
-        initialLocation={activeLocationSlug as LocationSlug}
       />
     </div>
   );

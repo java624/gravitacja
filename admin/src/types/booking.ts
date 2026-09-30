@@ -50,6 +50,12 @@ export interface CreateReservationInput {
   total_price?: number;
   payment_method?: PaymentMethod | string;
   payment_status?: PaymentStatus;
+  /**
+   * Optional explicit reservation status. Used by the reception quick booking
+   * ("paid on site" = confirmed but payment still pending). Defaults to
+   * 'confirmed' when payment_status is 'paid', otherwise 'pending'.
+   */
+  status?: ReservationStatus;
   include_shoes?: boolean;
   shoes_count?: number;
 }

@@ -127,7 +127,8 @@ export async function createReservation(input: CreateReservationInput): Promise<
     throw new Error(SLOT_TAKEN_MESSAGE);
   }
 
-  const status: ReservationStatus = input.payment_status === 'paid' ? 'confirmed' : 'pending';
+  const status: ReservationStatus =
+    input.status ?? (input.payment_status === 'paid' ? 'confirmed' : 'pending');
 
   if (!isSupabaseConfigured || !supabase) {
     const list = getMockReservations();
