@@ -3,7 +3,7 @@ import type { CorporateInquiry } from '../../types/corporate';
 import type { BirthdayInquiry } from '../../types/birthday';
 
 export const INITIAL_MOCK_RESOURCES: Resource[] = [
-  // Katowice - 12 torów kręglarskich + 2 stoły bilardowe
+  // Katowice - 12 torów kręglarskich + 4 stoły bilardowe
   { id: 'kat-b1', name: 'Tor 1', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-b2', name: 'Tor 2', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-b3', name: 'Tor 3', type: 'bowling', location_slug: 'katowice', is_active: true },
@@ -18,6 +18,8 @@ export const INITIAL_MOCK_RESOURCES: Resource[] = [
   { id: 'kat-b12', name: 'Tor 12', type: 'bowling', location_slug: 'katowice', is_active: true },
   { id: 'kat-p1', name: 'Stół 1', type: 'billiards', location_slug: 'katowice', is_active: true },
   { id: 'kat-p2', name: 'Stół 2', type: 'billiards', location_slug: 'katowice', is_active: true },
+  { id: 'kat-p3', name: 'Stół 3', type: 'billiards', location_slug: 'katowice', is_active: true },
+  { id: 'kat-p4', name: 'Stół 4', type: 'billiards', location_slug: 'katowice', is_active: true },
 
   // Jaworzno
   { id: 'jaw-b1', name: 'Tor 1', type: 'bowling', location_slug: 'jaworzno', is_active: true },

@@ -149,6 +149,8 @@ insert into public.resources (id, name, type, location_slug, is_active) values
   ('kat-b12', 'Tor 12',               'bowling',   'katowice', true),
   ('kat-p1',  'Stol Bilardowy #1',    'billiards', 'katowice', true),
   ('kat-p2',  'Stol Bilardowy #2',    'billiards', 'katowice', true),
+  ('kat-p3',  'Stol Bilardowy #3',    'billiards', 'katowice', true),
+  ('kat-p4',  'Stol Bilardowy #4',    'billiards', 'katowice', true),
   ('jaw-b1',  'Tor 1 Cosmic',         'bowling',   'jaworzno', true),
   ('jaw-b2',  'Tor 2 Cosmic',         'bowling',   'jaworzno', true),
   ('jaw-p1',  'Stol Bilardowy #1',    'billiards', 'jaworzno', true),

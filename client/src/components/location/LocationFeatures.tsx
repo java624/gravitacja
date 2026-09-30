@@ -27,8 +27,8 @@ const LOCATION_FEATURES_DATA: Record<LocationSlug, Array<{
     {
       id: 'billiards',
       title: 'Strefa Bilardowa',
-      subtitle: 'Stoły tournament grade',
-      description: 'Profesjonalne stoły 9ft do gry w ósemkę i dziewiątkę. Idealna przestrzeń do rywalizacji przy lampce dobrego trunku.',
+      subtitle: '4 stoły tournament grade',
+      description: 'Cztery profesjonalne stoły 9ft do gry w ósemkę i dziewiątkę. Idealna przestrzeń do rywalizacji przy lampce dobrego trunku.',
       icon: Gamepad2,
       color: 'from-purple-500/20 to-pink-600/20 border-purple-500/30 text-purple-400',
     },

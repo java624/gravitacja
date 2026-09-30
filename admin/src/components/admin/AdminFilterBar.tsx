@@ -53,7 +53,7 @@ export default function AdminFilterBar({
             }`}
           >
             <option value="all">Wszystkie Centra</option>
-            <option value="katowice">Katowice (12 torów)</option>
+            <option value="katowice">Katowice (12 torów + 4 bilardy)</option>
             <option value="jaworzno">Jaworzno</option>
             <option value="poznan">Poznań</option>
           </select>

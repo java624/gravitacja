@@ -208,7 +208,7 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
           </span>
           {activeLocationSlug === 'katowice' && (
             <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-medium">
-              12 torów + 2 bilardy
+              12 torów + 4 bilardy
             </span>
           )}
         </div>
@@ -231,7 +231,7 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
           <div>
             <span className="font-semibold text-amber-100">Tryb lokalny / demonstracyjny: </span>
             <span className="text-amber-200/90">
-              Dane pochodzą z lokalnego magazynu testowego (Katowice: 12 torów bowlingowych Tor 1...Tor 12). Zmiany statusu i rezerwacje działają w pamięci przeglądarki.
+              Dane pochodzą z lokalnego magazynu testowego (Katowice: 12 torów bowlingowych Tor 1...Tor 12 oraz 4 stoły bilardowe Stół 1...Stół 4). Zmiany statusu i rezerwacje działają w pamięci przeglądarki.
             </span>
           </div>
         </div>
