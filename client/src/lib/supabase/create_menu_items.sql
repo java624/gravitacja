@@ -4,33 +4,71 @@
 --  Uruchom w Supabase SQL Editor PRZED wdrożeniem panelu admina.
 --  Skrypt jest idempotentny (można go odpalić wielokrotnie).
 --
---  UWAGA O NAZWACH KOLUMN:
---  W tym projekcie nazwa potrawy trzymana jest w kolumnie `title`
---  (tak było od początku i tak używa jej cały kod: `MenuItem.title`,
---  `AdminMenuManager`, `MenuSection`, `MenuItemArt`). Nie zmieniamy tego na
---  `name`, bo wymagałoby to jednoczesnej zmiany kontraktu we wszystkich
---  warstwach obu aplikacji. Schemat:
+--  POWOD HTTP 400 PRZY ZAPISIE MENU (naprawia ten skrypt):
+--  PostgREST zwraca 400 z błędem PGRST204 ("Could not find the '<kolumna>'
+--  column of 'menu_items' in the schema cache"), gdy kod wysyła klucza, którego
+--  nie ma w tabeli. Panel admina wysyła: title, description, price, price_maxi,
+--  volume, portion, category, image_url, location_slug, location, is_available,
+--  is_bestseller, sort_order. Poniżej masz komplet tych kolumn.
 --
---    id, title (= "name" w specyfikacji), description, price, price_maxi,
---    volume, category, image_url, location_slug, is_available,
---    is_bestseller, created_at
+--  UWAGA O NAZWACH:
+--  Nazwa potrawy trzymana jest w kolumnie `title` (tak było od początku i tak
+--  używa jej cały kod: MenuItem.title, AdminMenuManager, MenuSection,
+--  MenuItemArt). Nie zmieniamy tego na `name` - wymagałoby to jednoczesnej
+--  zmiany kontraktu we wszystkich warstwach obu aplikacji.
 -- ============================================================================
 
 -- 1) Tabela menu_items ---------------------------------------------------------------
 create table if not exists public.menu_items (
   id uuid default gen_random_uuid() primary key,
-  location_slug text not null default 'katowice',
-  category text not null, -- 'snacki', 'przekaski', 'pizza', 'napoje_zimne', 'napoje_gorace', 'piwo', 'alkohole', 'cocktails', 'shots', 'zestawy'
   title text not null,
   description text,
   price numeric(10, 2) not null,
-  price_maxi numeric(10, 2), -- dla pizzy Maxi lub wież piwnych 5L
-  volume text, -- e.g. '40ml', '0.5l', '160g', '32cm'
-  image_url text, -- publiczny URL zdjęcia z bucketa menu-images
-  is_available boolean default true,
-  is_bestseller boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  price_maxi numeric(10, 2),          -- dla pizzy Maxi lub wież piwnych 5L
+  volume text,                        -- np. '40ml', '0.5l', '160g', '32cm'
+  portion text,                       -- synonim volume używany przez formularz
+  category text not null,             -- 'snacki', 'przekaski', 'pizza', 'napoje_zimne', ...
+  image_url text,                     -- publiczny URL zdjęcia z bucketa menu-images
+  location_slug text not null default 'katowice',
+  location text not null default 'katowice',
+  is_available boolean not null default true,
+  is_bestseller boolean not null default false,
+  sort_order integer not null default 0,   -- kolejność w menu (drag & drop)
+  created_at timestamp with time zone not null default timezone('utc'::text, now())
 );
+
+-- 2) Dogrywka kolumn dla tabel, które powstały w starszej wersji -------------------
+--    Każda z tych kolumn MUSI istnieć, bo panel wysyła je przy insert/update,
+--    a brak którejkolwiek kończy się HTTP 400 PGRST204.
+alter table public.menu_items add column if not exists image_url text;
+alter table public.menu_items add column if not exists volume text;
+alter table public.menu_items add column if not exists portion text;
+alter table public.menu_items add column if not exists location_slug text not null default 'katowice';
+alter table public.menu_items add column if not exists location text not null default 'katowice';
+alter table public.menu_items add column if not exists sort_order integer not null default 0;
+alter table public.menu_items add column if not exists price_maxi numeric(10, 2);
+alter table public.menu_items add column if not exists is_bestseller boolean not null default false;
+alter table public.menu_items add column if not exists is_available boolean not null default true;
+
+comment on column public.menu_items.image_url is
+  'Publiczny URL zdjęcia w Supabase Storage (bucket menu-images) albo null.';
+comment on column public.menu_items.sort_order is
+  'Kolejność pozycji w menu. Ustawiane przeciąganiem myszką w panelu admina.';
+
+-- 3) Backfill sort_order dla istniejących pozycji -----------------------------------
+--    Nowa kolonka dostaje 0 u wszystkich, więc bez tego klient pokazałby menu
+--    w losowej kolejności. Nadajemy numerację wg daty powstania, żeby istniejące
+--    menu zachowało dotychczasową kolejność.
+with ranked as (
+  select id,
+         row_number() over (partition by location_slug order by created_at asc) as computed_order
+  from public.menu_items
+  where sort_order = 0
+)
+update public.menu_items m
+set sort_order = r.computed_order
+from ranked r
+where m.id = r.id;
 
 -- Enable RLS (Row Level Security)
 alter table public.menu_items enable row level security;

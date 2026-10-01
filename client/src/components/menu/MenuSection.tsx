@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, Star, Pizza, Utensils, GlassWater, Beer, Wine, AlertCircle } from 'lucide-react';
 import { fetchMenuItems, type MenuItem } from '../../lib/supabase/menuService';
@@ -39,7 +39,21 @@ export default function MenuSection({ locationSlug = 'katowice' }: MenuSectionPr
     }
   };
 
-  const filteredItems = items.filter((item) => {
+  // Kolejność z panelu admina (drag & drop -> sort_order). Sortujemy ponownie
+// po stronie klienta, bo dane mogą przyjść z localStorage (gdy baza jest
+// niedostępna), gdzie kolejności z bazy w ogóle nie ma. created_at łamie
+// remisy, żeby pozycje bez sort_order nie skakały losowo między renderami.
+const sortedItems = useMemo(
+  () =>
+    items.slice().sort((a, b) => {
+      const diff = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      if (diff !== 0) return diff;
+      return (a.created_at ?? '').localeCompare(b.created_at ?? '');
+    }),
+  [items]
+);
+
+const filteredItems = sortedItems.filter((item) => {
     // Search query filter
     const matchesSearch =
       searchQuery.trim() === '' ||

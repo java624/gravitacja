@@ -1,16 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Edit2, Trash2, Power, Star, Utensils, AlertCircle, ImageOff, X } from 'lucide-react';
+import {
+  Search, Plus, Edit2, Trash2, Power, Star, Utensils, AlertCircle,
+  ImageOff, X, GripVertical, CheckCircle2, Loader2,
+} from 'lucide-react';
 import {
   fetchMenuItems,
   toggleMenuItemAvailability,
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  persistMenuItemOrder,
   type MenuItem,
 } from '../../lib/supabase/menuService';
 import { uploadImage, deleteImage } from '../../lib/supabase/menuImageService';
 import MenuItemModal, { CATEGORY_OPTIONS, type MenuItemDraft } from './MenuItemModal';
+
+interface Toast {
+  id: number;
+  type: 'success' | 'error';
+  message: string;
+}
 
 interface AdminMenuManagerProps {
   locationSlug?: string;
@@ -29,6 +39,24 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
   // Confirm modal - natywny confirm() wyglądał jak błąd w panelu operatora
   const [itemPendingDelete, setItemPendingDelete] = useState<MenuItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Powiadomienia zamiast cichego ignorowania błędów zapisu.
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(0);
+
+  const pushToast = useCallback((type: Toast['type'], message: string) => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, type, message }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 6000);
+  }, []);
+
+  // Drag & drop (natywne zdarzenia HTML5 - bez dodatkowej zależności).
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const orderSnapshotRef = useRef<MenuItem[]>([]);
 
   useEffect(() => {
     loadMenuItems();
@@ -55,13 +83,74 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
 
     try {
       await toggleMenuItemAvailability(item.id, newStatus);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to toggle availability:', err);
       // Revert on error
       setItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, is_available: item.is_available } : i))
       );
+      pushToast('error', err?.message || 'Nie udało się zmienić dostępności pozycji.');
     }
+  };
+
+  /**
+   * Przeciągnięcie pozycji myszką.
+   *
+   * Kolejność przeliczamy po CYLI tabeli (a nie tylko widocznych wierszy),
+   * bo `sort_order` jest skalą globalną dla lokalizacji. Gdy filtr pokazuje
+   * podzbiór, pozycje spoza widoku zachowują swoje numery, a przeciągana
+   * dostaje numer z miejsca, w którym wylądowała.
+   */
+  const handleDragStart = (id: string) => {
+    orderSnapshotRef.current = items;
+    setDraggedId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTableRowElement>, id: string) => {
+    // Bez preventDefault przeglądarka nie pozwala upuścić elementu.
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== draggedId) setDragOverId(id);
+  };
+
+  const handleDrop = async (targetId: string) => {
+    const sourceId = draggedId;
+    setDraggedId(null);
+    setDragOverId(null);
+    if (!sourceId || sourceId === targetId) return;
+
+    const orderedIds = items.map((i) => i.id);
+    const fromIndex = orderedIds.indexOf(sourceId);
+    const toIndex = orderedIds.indexOf(targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    orderedIds.splice(toIndex, 0, ...orderedIds.splice(fromIndex, 1));
+
+    // Optymistycznie przestawiamy wiersze i nadajemy sort_order 1..n.
+    const reordered = items
+      .slice()
+      .sort((a, b) => orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id))
+      .map((item, index) => ({ ...item, sort_order: index + 1 }));
+
+    setItems(reordered);
+    setIsSavingOrder(true);
+
+    try {
+      await persistMenuItemOrder(orderedIds, locationSlug);
+      pushToast('success', 'Nowa kolejność menu została zapisana.');
+    } catch (err: any) {
+      console.error('Failed to persist menu order:', err);
+      // Przywracamy stan sprzed przeciągnięcia - lista nie może kłamać.
+      setItems(orderSnapshotRef.current);
+      pushToast('error', err?.message || 'Nie udało się zapisać kolejności menu.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
   };
 
   // Usunięcie pozycji idzie dopiero po potwierdzeniu w modalu (nie confirm()).
@@ -78,9 +167,11 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
       // nie zostalibyśmy ze pozycją bez zdjęcia.
       await deleteImage(target.image_url);
       setItemPendingDelete(null);
-    } catch (err) {
+      pushToast('success', `Pozycja "${target.title}" została usunięta.`);
+    } catch (err: any) {
       console.error('Failed to delete item:', err);
       loadMenuItems();
+      pushToast('error', err?.message || 'Nie udało się usunąć pozycji z menu.');
     } finally {
       setIsDeleting(false);
     }
@@ -112,13 +203,37 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
       if (replaced || imageUrl === null) {
         await deleteImage(oldUrl);
       }
+      pushToast('success', `Zapisano "${payload.title}".`);
     } else {
       const created = await createMenuItem(payload);
-      setItems((prev) => [created, ...prev]);
+      // Nowa pozycja ląduje na końcu menu, a nie na pozycji 0.
+      const nextOrder = items.length + 1;
+      setItems((prev) => [{ ...created, sort_order: nextOrder }, ...prev]);
+      if (Number.isNaN(Number(created.sort_order)) || created.sort_order === 0) {
+        void persistMenuItemOrder(
+          [created.id, ...items.map((i) => i.id)],
+          locationSlug
+        ).catch((err: any) => {
+          console.error('Failed to persist sort order for new item:', err);
+          pushToast('error', err?.message || 'Nie udało się ustawić kolejności nowej pozycji.');
+        });
+      }
+      pushToast('success', `Dodano "${payload.title}".`);
     }
   };
 
-  const filteredItems = items.filter((item) => {
+  // sort_order z bazy ma pierwszeństwo; created_at łamie remisy pozycji z 0.
+  const sortedItems = useMemo(
+    () =>
+      items.slice().sort((a, b) => {
+        const diff = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        if (diff !== 0) return diff;
+        return (a.created_at ?? '').localeCompare(b.created_at ?? '');
+      }),
+    [items]
+  );
+
+  const filteredItems = sortedItems.filter((item) => {
     const matchesSearch =
       searchQuery.trim() === '' ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -144,6 +259,12 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
           <p className="text-xs text-slate-400 mt-1">
             Włączaj/wyłączaj potrawy w 1-klik (Stop-list) oraz edytuj ceny i pozycje.
           </p>
+          {isSavingOrder && (
+            <p className="flex items-center gap-1.5 text-[11px] text-orange-400 mt-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Zapisywanie kolejności menu...
+            </p>
+          )}
         </div>
 
         <button
@@ -221,6 +342,10 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
               <thead className="bg-white/5 border-b border-white/10 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
                 <tr>
                   <th className="px-5 py-3.5">Status (Stop-list)</th>
+                  <th className="px-2 py-3.5 w-10">
+                    <span className="sr-only">Kolejność</span>
+                    <GripVertical className="w-3.5 h-3.5 text-slate-600" />
+                  </th>
                   <th className="px-5 py-3.5">Zdjęcie</th>
                   <th className="px-5 py-3.5">Nazwa & Składniki</th>
                   <th className="px-5 py-3.5">Kategoria</th>
@@ -233,10 +358,28 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
                 {filteredItems.map((item) => (
                   <tr
                     key={item.id}
-                    className={`hover:bg-white/5 transition-colors ${
+                    draggable
+                    onDragStart={() => handleDragStart(item.id)}
+                    onDragOver={(e) => handleDragOver(e, item.id)}
+                    onDrop={() => void handleDrop(item.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-colors ${
                       !item.is_available ? 'bg-red-950/10' : ''
+                    } ${
+                      draggedId === item.id ? 'opacity-40' : ''
+                    } ${
+                      dragOverId === item.id ? 'ring-2 ring-inset ring-orange-500/70' : ''
                     }`}
                   >
+                    {/* Drag handle */}
+                    <td className="px-2 py-4">
+                      <span
+                        className="flex items-center justify-center text-slate-600 hover:text-orange-400 transition-colors cursor-grab active:cursor-grabbing"
+                        title="Przeciągnij, aby zmienić kolejność w menu"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </span>
+                    </td>
                     {/* 1-Click Stop List Toggle */}
                     <td className="px-5 py-4">
                       <button
@@ -349,6 +492,41 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
         editingItem={editingItem}
         locationSlug={locationSlug}
       />
+
+      {/* Toasts - błędy zapisu muszą być widoczne, a nie zjadane w konsoli */}
+      <div className="fixed bottom-6 right-6 z-[120] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.18 }}
+              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border shadow-2xl backdrop-blur-xl ${
+                toast.type === 'error'
+                  ? 'bg-red-950/90 border-red-500/40 text-red-100'
+                  : 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100'
+              }`}
+            >
+              {toast.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              )}
+              <p className="text-xs leading-relaxed flex-1">{toast.message}</p>
+              <button
+                type="button"
+                onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+                className="text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                title="Zamknij"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* Delete Confirm Modal */}
       <AnimatePresence>
