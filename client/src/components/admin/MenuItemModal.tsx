@@ -1,14 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Save, Plus } from 'lucide-react';
+import { X, Sparkles, Save, Plus, ImagePlus, Trash2 } from 'lucide-react';
 import type { MenuItem } from '../../lib/supabase/menuService';
+import { validateImageFile } from '../../lib/supabase/menuImageService';
 
 interface MenuItemModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (itemData: Omit<MenuItem, 'id' | 'created_at'>) => Promise<void>;
+  /**
+   * `imageFile` to plik wybrany z dysku - rodzic wgrywa go do Supabase Storage
+   * i podmienia `image_url` na publiczny link. `image_url === null` oznacza
+   * świadome usunięcie zdjęcia.
+   */
+  onSubmit: (itemData: MenuItemDraft) => Promise<void>;
   editingItem?: MenuItem | null;
   locationSlug?: string;
+}
+
+/** Dane z formularza - jak MenuItem, ale z dołączonym plikiem do wgrania. */
+export interface MenuItemDraft extends Omit<MenuItem, 'id' | 'created_at'> {
+  imageFile?: File;
 }
 
 export const CATEGORY_OPTIONS = [
@@ -42,6 +53,12 @@ export default function MenuItemModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Zdjęcie: plik do wysłania + podgląd (blob URL lub istniejący URL z bazy).
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (editingItem) {
       setTitle(editingItem.title);
@@ -52,10 +69,38 @@ export default function MenuItemModal({
       setDescription(editingItem.description || '');
       setIsAvailable(editingItem.is_available);
       setIsBestseller(editingItem.is_bestseller);
+      setImageFile(null);
+      setImagePreview(editingItem.image_url || null);
     } else {
       resetForm();
     }
   }, [editingItem, isOpen]);
+
+  // Wybór nowego pliku: walidujemy od razu, żeby pokazać błąd bez próby wysłania.
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setErrorMsg(validationError);
+      // czyścimy input, żeby ponowne wybranie tego samego pliku odpaliło onChange
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setErrorMsg(null);
+    setImageFile(file);
+    setRemoveImage(false);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleClearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -66,6 +111,9 @@ export default function MenuItemModal({
     setDescription('');
     setIsAvailable(true);
     setIsBestseller(false);
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(false);
     setErrorMsg(null);
   };
 
@@ -85,6 +133,17 @@ export default function MenuItemModal({
 
     const parsedPriceMaxi = priceMaxi.trim() ? parseFloat(priceMaxi) : undefined;
 
+    // Zdjęcie: wybrany plik jedzie w `imageFile` i wgrywa je rodzic
+    // (AdminMenuManager) przed zapisem do bazy. `image_url`:
+    //   null  -> zdjęcie usunięte,
+    //   URL   -> bez zmian (zostawiamy stare),
+    //   undefined -> nie ruszamy pola przy edycji.
+    const resolvedImageUrl: string | null | undefined = removeImage
+      ? null
+      : imageFile
+        ? undefined
+        : editingItem?.image_url ?? undefined;
+
     setErrorMsg(null);
     setIsSubmitting(true);
 
@@ -97,6 +156,8 @@ export default function MenuItemModal({
         price: parsedPrice,
         price_maxi: parsedPriceMaxi,
         volume: volume.trim() || undefined,
+        image_url: resolvedImageUrl,
+        imageFile: imageFile ?? undefined,
         is_available: isAvailable,
         is_bestseller: isBestseller,
       });
@@ -225,6 +286,76 @@ export default function MenuItemModal({
                 onChange={(e) => setVolume(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-orange-500/50 text-white outline-none"
               />
+            </div>
+
+            {/* Dish photo */}
+            <div>
+              <label className="block text-slate-400 uppercase font-bold mb-1 tracking-wider">
+                Zdjęcie potrawy
+              </label>
+
+              <div className="flex items-start gap-4">
+                {/* Preview / empty state */}
+                <div className="w-28 h-28 rounded-xl overflow-hidden bg-white/5 border border-white/10 shrink-0 flex items-center justify-center relative">
+                  {imagePreview && !removeImage ? (
+                    <img
+                      src={imagePreview}
+                      alt="Podgląd zdjęcia"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-slate-600 px-2 text-center">
+                      <ImagePlus className="w-6 h-6" />
+                      <span className="text-[9px] uppercase font-bold leading-tight">
+                        Brak zdjęcia
+                      </span>
+                    </div>
+                  )}
+                  {imageFile && (
+                    <span className="absolute bottom-0 inset-x-0 py-0.5 bg-orange-500/80 text-[8px] font-black uppercase text-white text-center">
+                      Nowe
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="menu-item-photo-input"
+                  />
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <ImagePlus className="w-3.5 h-3.5" />
+                      {imagePreview ? 'Zmień zdjęcie' : 'Wybierz zdjęcie'}
+                    </button>
+
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={handleClearImage}
+                        className="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 font-bold uppercase text-[10px] tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Usuń zdjęcie
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 leading-tight">
+                    JPG, PNG, WEBP, GIF lub AVIF, maks. 5 MB. Bez zdjęcia klient pokaże
+                    domyślną ilustrację kategorii.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Description */}

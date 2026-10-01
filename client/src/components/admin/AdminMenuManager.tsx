@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Power, Star, Utensils, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Plus, Edit2, Trash2, Power, Star, Utensils, AlertCircle, ImageOff, X } from 'lucide-react';
 import {
   fetchMenuItems,
   toggleMenuItemAvailability,
@@ -8,7 +9,8 @@ import {
   deleteMenuItem,
   type MenuItem,
 } from '../../lib/supabase/menuService';
-import MenuItemModal, { CATEGORY_OPTIONS } from './MenuItemModal';
+import { uploadImage, deleteImage } from '../../lib/supabase/menuImageService';
+import MenuItemModal, { CATEGORY_OPTIONS, type MenuItemDraft } from './MenuItemModal';
 
 interface AdminMenuManagerProps {
   locationSlug?: string;
@@ -23,6 +25,10 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
+  // Confirm modal - natywny confirm() wyglądał jak błąd w panelu operatora
+  const [itemPendingDelete, setItemPendingDelete] = useState<MenuItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadMenuItems();
@@ -58,24 +64,56 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
     }
   };
 
-  const handleDeleteItem = async (id: string, title: string) => {
-    if (!confirm(`Czy na pewno chcesz usunąć pozycję "${title}" z menu?`)) return;
+  // Usunięcie pozycji idzie dopiero po potwierdzeniu w modalu (nie confirm()).
+  const handleDeleteItem = async () => {
+    if (!itemPendingDelete) return;
 
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    const target = itemPendingDelete;
+    setIsDeleting(true);
+
+    setItems((prev) => prev.filter((i) => i.id !== target.id));
     try {
-      await deleteMenuItem(id);
+      await deleteMenuItem(target.id);
+      // Zdjęcie kasujemy dopiero po usunięciu rekordu - gdyby zapis się nie udał,
+      // nie zostalibyśmy ze pozycją bez zdjęcia.
+      await deleteImage(target.image_url);
+      setItemPendingDelete(null);
     } catch (err) {
       console.error('Failed to delete item:', err);
       loadMenuItems();
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handleSaveModalItem = async (itemData: Omit<MenuItem, 'id' | 'created_at'>) => {
+  const handleSaveModalItem = async (draft: MenuItemDraft) => {
+    const { imageFile, ...itemData } = draft;
+
+    // 1) Najpierw zdjęcie - jeśli wgranie padnie, nie zapisujemy pozycji.
+    let imageUrl = itemData.image_url;
+    let uploadedPath: string | null = null;
+
+    if (imageFile) {
+      const upload = await uploadImage(imageFile, locationSlug, editingItem?.id);
+      imageUrl = upload.url;
+      uploadedPath = upload.path;
+    }
+
+    // 2) Zapis do bazy (imageFile nie jest kolumną, więc nie leci do Supabase).
+    const payload = { ...itemData, image_url: imageUrl ?? null };
+
     if (editingItem) {
-      const updated = await updateMenuItem(editingItem.id, itemData);
+      const updated = await updateMenuItem(editingItem.id, payload);
       setItems((prev) => prev.map((i) => (i.id === editingItem.id ? updated : i)));
+
+      // 3) Stare zdjęcie sprzątamy dopiero po udanym zapisie.
+      const oldUrl = editingItem.image_url;
+      const replaced = !!uploadedPath && !!oldUrl && oldUrl !== imageUrl;
+      if (replaced || imageUrl === null) {
+        await deleteImage(oldUrl);
+      }
     } else {
-      const created = await createMenuItem(itemData);
+      const created = await createMenuItem(payload);
       setItems((prev) => [created, ...prev]);
     }
   };
@@ -183,6 +221,7 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
               <thead className="bg-white/5 border-b border-white/10 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
                 <tr>
                   <th className="px-5 py-3.5">Status (Stop-list)</th>
+                  <th className="px-5 py-3.5">Zdjęcie</th>
                   <th className="px-5 py-3.5">Nazwa & Składniki</th>
                   <th className="px-5 py-3.5">Kategoria</th>
                   <th className="px-5 py-3.5">Porcja</th>
@@ -211,6 +250,25 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
                         <Power className="w-3 h-3" />
                         <span>{item.is_available ? 'Dostępny' : 'Niedostępny'}</span>
                       </button>
+                    </td>
+
+                    {/* Photo */}
+                    <td className="px-5 py-4">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          loading="lazy"
+                          className="w-12 h-12 rounded-lg object-cover border border-white/10 bg-slate-800"
+                        />
+                      ) : (
+                        <div
+                          className="w-12 h-12 rounded-lg border border-dashed border-white/15 bg-white/5 flex items-center justify-center"
+                          title="Brak zdjęcia - klient pokaże ilustrację kategorii"
+                        >
+                          <ImageOff className="w-4 h-4 text-slate-600" />
+                        </div>
+                      )}
                     </td>
 
                     {/* Title & Ingredients */}
@@ -264,7 +322,7 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteItem(item.id, item.title)}
+                          onClick={() => setItemPendingDelete(item)}
                           title="Usuń pozycję"
                           className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-white/10 transition-all cursor-pointer"
                         >
@@ -291,6 +349,93 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
         editingItem={editingItem}
         locationSlug={locationSlug}
       />
+
+      {/* Delete Confirm Modal */}
+      <AnimatePresence>
+        {itemPendingDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDeleting && setItemPendingDelete(null)}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.15 }}
+              className="relative w-full max-w-md bg-slate-900 border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden text-slate-100"
+            >
+              <div className="p-6 text-left">
+                <div className="flex items-start gap-4">
+                  {itemPendingDelete.image_url ? (
+                    <img
+                      src={itemPendingDelete.image_url}
+                      alt=""
+                      className="w-14 h-14 rounded-xl object-cover border border-white/10 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl border border-dashed border-white/15 bg-white/5 flex items-center justify-center shrink-0">
+                      <ImageOff className="w-5 h-5 text-slate-600" />
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-red-300">
+                        Usunąć pozycję?
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setItemPendingDelete(null)}
+                        disabled={isDeleting}
+                        className="text-slate-500 hover:text-slate-200 transition-colors cursor-pointer"
+                        title="Zamknij"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-sm font-bold text-white mt-1 truncate">
+                      {itemPendingDelete.title}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                      Pozycja zniknie z menu klienta, a zdjęcie
+                      {itemPendingDelete.image_url
+                        ? ' zostanie skasowane w Supabase Storage.'
+                        : ' nie ma - nic nie zostanie usunięte z magazynu.'}{' '}
+                      Tej operacji nie można cofnąć.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setItemPendingDelete(null)}
+                    disabled={isDeleting}
+                    className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold uppercase text-xs cursor-pointer disabled:opacity-50"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteItem}
+                    disabled={isDeleting}
+                    className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase text-xs tracking-wider cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {isDeleting ? 'Usuwanie...' : 'Usuń'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

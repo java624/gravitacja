@@ -10,6 +10,7 @@ export interface MenuItem {
   price: number;
   price_maxi?: number | null;
   volume?: string | null;
+  image_url?: string | null;
   is_available: boolean;
   is_bestseller: boolean;
   created_at?: string;
@@ -51,9 +52,14 @@ export async function fetchMenuItems(locationSlug: string = 'katowice'): Promise
         .eq('location_slug', locationSlug)
         .order('created_at', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data as MenuItem[];
+      // Pusty wynik to ODPOWIEDŹ bazy, nie błąd: jeśli właściciel usunął
+      // ostatnią pozycję, menu ma być puste. Wcześniej `data.length > 0`
+      // powodowało, że po skasowaniu wszystkiego klient znowu widział
+      // dane demonstracyjne - wyglądało to jak "usunięcie nie działa".
+      if (!error) {
+        return (data ?? []) as MenuItem[];
       }
+      console.warn('Supabase fetchMenuItems error, using local fallback:', error.message);
     } catch (err) {
       console.warn('Supabase fetchMenuItems warning, using local fallback:', err);
     }

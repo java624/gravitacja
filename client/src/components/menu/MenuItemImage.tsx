@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ZoomIn, Sparkles } from 'lucide-react';
 import type { MenuItem } from '../../lib/supabase/menuService';
 import { MENU_IMAGES } from './menuImages';
@@ -11,14 +11,27 @@ import MenuItemArt from './MenuItemArt';
  *  - diagonal shine sweep across the whole image
  *  - neon gradient halo + inner ring on hover
  *  - central "zoom" badge and corner sparkle glints
- * Falls back to the neon SVG illustration when no photo is mapped.
+ *
+ * ŹRÓDŁO ZDJĘCIA (kolejność):
+ *  1. `item.image_url` - zdjęcie wgrane przez właściciela w panelu admina
+ *     (Supabase Storage). To jest jedyne źródło, które reaguje na zmiany
+ *     w panelu po odświeżeniu strony.
+ *  2. `MENU_IMAGES[item.id]` - statyczna mapa dla pozycji startowych, żeby
+ *     menu nie wyglądało pusto zanim właściciel wgra własne zdjęcia.
+ *  3. `MenuItemArt` - generowana ilustracja SVG danej kategorii.
  */
 export default function MenuItemImage({ item }: { item: MenuItem }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const src = MENU_IMAGES[item.id];
+  // Zmiana zdjęcia w bazie musi zresetować błąd wczytywania, inaczej po podmianie
+  // URL-a stary komponent zostanie z "zepsutym" stanem i pokaże ilustrację.
+  useEffect(() => {
+    setImgFailed(false);
+  }, [item.image_url]);
+
+  const src = item.image_url || MENU_IMAGES[item.id];
   const showPhoto = src && !imgFailed;
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
