@@ -1,20 +1,50 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, Star, Pizza, Utensils, GlassWater, Beer, Wine, AlertCircle } from 'lucide-react';
-import { fetchMenuItems, type MenuItem } from '../../lib/supabase/menuService';
+import { fetchMenuItems, normalizeCategory, type MenuItem } from '../../lib/supabase/menuService';
 import MenuItemImage from './MenuItemImage';
 
 interface MenuSectionProps {
   locationSlug?: string;
 }
 
+/**
+ * Zakładki kategorii i wartości z bazy, które do nich należą.
+ *
+ * `id` to slug używany w stanie komponentu (kliknięcie zakładki), a `dbValues`
+ * to wartości `menu_items.category`, które mają zostać pokazane. Nie mogą być
+ * identyczne, bo jedna zakładka zbiera kilka kategorii z bazy:
+ *   'przekaski' -> snacki + przekaski
+ *   'napoje'    -> napoje_zimne + napoje_gorace
+ *   'alkohole'  -> alkohole + cocktails + shots + zestawy
+ *
+ * Warianty pisowni ('przekąski', 'napoje zimne', 'PIZZA') też są tu wymienione,
+ * bo kolumna w bazie to wolny tekst i nie ma gwarancji jednolitego formatu.
+ * Porównanie i tak idzie przez normalizeCategory(), więc wielkość liter i spacje
+ * nie mają znaczenia - zostaje sama treść aliasu.
+ */
 export const CATEGORIES = [
-  { id: 'all', name: 'Wszystkie', icon: Sparkles },
-  { id: 'pizza', name: 'Pizza', icon: Pizza },
-  { id: 'przekaski', name: 'Snacki & Przekąski', icon: Utensils },
-  { id: 'napoje', name: 'Napoje', icon: GlassWater },
-  { id: 'piwo', name: 'Piwo', icon: Beer },
-  { id: 'alkohole', name: 'Alkohole & Drinki', icon: Wine },
+  { id: 'all', name: 'Wszystkie', icon: Sparkles, dbValues: [] as string[] },
+  { id: 'pizza', name: 'Pizza', icon: Pizza, dbValues: ['pizza'] },
+  {
+    id: 'przekaski',
+    name: 'Snacki & Przekąski',
+    icon: Utensils,
+    dbValues: ['snacki', 'przekaski', 'przekąski', 'snacki & przekąski', 'przekąski i snacki'],
+  },
+  {
+    id: 'napoje',
+    name: 'Napoje',
+    icon: GlassWater,
+    dbValues: ['napoje', 'napoje_zimne', 'napoje_gorace', 'napoje zimne', 'napoje gorące'],
+  },
+  { id: 'piwo', name: 'Piwo', icon: Beer, dbValues: ['piwo'] },
+  {
+    id: 'alkohole',
+    name: 'Alkohole & Drinki',
+    icon: Wine,
+    dbValues: ['alkohole', 'alkohole i drinki', 'cocktails', 'shots', 'zestawy'],
+  },
 ];
 
 export default function MenuSection({ locationSlug = 'katowice' }: MenuSectionProps) {
@@ -53,30 +83,27 @@ const sortedItems = useMemo(
   [items]
 );
 
-const filteredItems = sortedItems.filter((item) => {
+// Wartości z bazy odpowiadające aktywnej zakładce, sprowadzone do postaci
+  // porównywalnej. Zakładka 'all' ma pustą listę i nic nie odfiltrowuje.
+  const activeCategoryValues = useMemo(() => {
+    const tab = CATEGORIES.find((c) => c.id === activeCategory);
+    return new Set((tab?.dbValues ?? []).map(normalizeCategory));
+  }, [activeCategory]);
+
+  const showAllCategories = activeCategoryValues.size === 0;
+
+  const filteredItems = sortedItems.filter((item) => {
     // Search query filter
     const matchesSearch =
       searchQuery.trim() === '' ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Category filter
-    let matchesCategory = true;
-    if (activeCategory === 'pizza') {
-      matchesCategory = item.category === 'pizza';
-    } else if (activeCategory === 'przekaski') {
-      matchesCategory = item.category === 'snacki' || item.category === 'przekaski';
-    } else if (activeCategory === 'napoje') {
-      matchesCategory = item.category === 'napoje_zimne' || item.category === 'napoje_gorace';
-    } else if (activeCategory === 'piwo') {
-      matchesCategory = item.category === 'piwo';
-    } else if (activeCategory === 'alkohole') {
-      matchesCategory =
-        item.category === 'alkohole' ||
-        item.category === 'cocktails' ||
-        item.category === 'shots' ||
-        item.category === 'zestawy';
-    }
+    // Category filter: 'wszystkie' przepuszcza wszystko, w pozostałych zakładkach
+    // porównujemy znormalizowane wartości, więc 'Pizza', ' pizza ' i 'PIZZA'
+    // trafiają do tej samej zakładki.
+    const matchesCategory =
+      showAllCategories || activeCategoryValues.has(normalizeCategory(item.category));
 
     return matchesSearch && matchesCategory;
   });

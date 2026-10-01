@@ -89,6 +89,26 @@ function describeSupabaseError(operation: string, error: unknown): Error {
 
 const LOCAL_STORAGE_KEY = 'gravitacja_menu_items_v1';
 
+/**
+ * Sprowadza wartość kategorii do postaci porównywalnej.
+ *
+ * Kolumna `category` w bazie to zwykły tekst, a wartości bywają wpisywane
+ * ręcznie i nie zawsze zgodne co do wielkości liter, spacji i polskich znaków
+ * diakrytycznych ('Przekąski' vs 'przekaski', ' pizza ' vs 'pizza'). Bez
+ * normalizacji kliknięcie zakładki po prostu nie pokazywałoby żadnej pozycji.
+ *
+ * NFD rozdziela 'ą' na 'a' + ogonek (U+0328), a zakres \u0300-\u036f usuwa sam
+ * znak diakrytyczny. 'ł' nie rozkłada się w NFD, więc podmieniamy go jawnie.
+ */
+export function normalizeCategory(value: string | null | undefined): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/ł/g, 'l')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 function getLocalMenuItems(): MenuItem[] {
   try {
     const data = localStorage.getItem(LOCAL_STORAGE_KEY);

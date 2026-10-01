@@ -11,6 +11,7 @@ import {
   updateMenuItem,
   deleteMenuItem,
   persistMenuItemOrder,
+  normalizeCategory,
   type MenuItem,
 } from '../../lib/supabase/menuService';
 import { uploadImage, deleteImage } from '../../lib/supabase/menuImageService';
@@ -239,7 +240,11 @@ export default function AdminMenuManager({ locationSlug = 'katowice' }: AdminMen
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    // Normalizacja (' pizza ' == 'Pizza' == 'PIZZA'): kolumna w bazie to wolny
+    // tekst, więc porównanie znak w znak gubiło pozycje przy innej pisowni.
+    const matchesCategory =
+      selectedCategory === 'all' ||
+      normalizeCategory(item.category) === normalizeCategory(selectedCategory);
 
     return matchesSearch && matchesCategory;
   });
