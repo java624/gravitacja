@@ -23,6 +23,8 @@ interface ReservationsManagerProps {
     cancelled: number;
   }) => void;
   allowDelete?: boolean;
+  /** Tryb pełnoekranowy (recepcja): siatka wypełnia 100% wysokości bez scrollbarów. */
+  isFullscreenMode?: boolean;
 }
 
 export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
@@ -31,6 +33,7 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   onLocationChange,
   onStatsUpdated,
   allowDelete = false,
+  isFullscreenMode = false,
 }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -170,15 +173,21 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={isFullscreenMode ? 'flex-1 min-h-0 flex flex-col gap-2' : 'space-y-4'}>
       {/* Requirement 3: Top Mode Switcher (Tabs) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+      <div
+        className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between rounded-2xl bg-slate-900 border border-slate-800 shadow-md ${
+          isFullscreenMode ? 'shrink-0 gap-2 p-1' : 'gap-3 p-1.5'
+        }`}
+      >
         <div className="flex items-center gap-1.5 w-full sm:w-auto">
           {/* Mode 1: Timeline View */}
           <button
             type="button"
             onClick={() => setViewMode('timeline')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              isFullscreenMode ? 'px-3 py-1.5' : 'px-4 sm:px-5 py-2.5'
+            } ${
               viewMode === 'timeline'
                 ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -192,7 +201,9 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
           <button
             type="button"
             onClick={() => setViewMode('table')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              isFullscreenMode ? 'px-3 py-1.5' : 'px-4 sm:px-5 py-2.5'
+            } ${
               viewMode === 'table'
                 ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -254,10 +265,11 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
           onRefresh={loadReservations}
           isLoading={isLoading}
           locationName={location?.toUpperCase()}
+          isFullscreenMode={isFullscreenMode}
         />
       ) : (
         /* Requirement 5: Mode 2 - List & Quick Search (Table View) */
-        <div className="space-y-4">
+        <div className={isFullscreenMode ? 'flex-1 min-h-0 overflow-auto space-y-3' : 'space-y-4'}>
           <AdminFilterBar
             selectedLocation={location || 'katowice'}
             setSelectedLocation={(val) => onLocationChange && onLocationChange(val as LocationSlug | 'all')}

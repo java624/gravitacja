@@ -4,12 +4,18 @@ import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
 import { AdminLoginModal } from './components/admin/auth/AdminLoginModal';
 import { ReceptionDashboard } from './components/admin/reception/ReceptionDashboard';
 import { OwnerDashboard } from './components/admin/owner/OwnerDashboard';
+import { ReceptionDisplayModeProvider, useReceptionDisplayMode } from './context/ReceptionDisplayModeContext';
 import { Lock, ShieldCheck, LogOut } from 'lucide-react';
 import './index.css';
 
 function AdminApp() {
   const { isAuthenticated, role, logout } = useAdminAuth();
+  const { isFullscreenMode } = useReceptionDisplayMode();
   const [isLoginOpen, setIsLoginOpen] = useState(!isAuthenticated);
+
+  // Tryb bez scrollbarów dotyczy wyłącznie recepcji - panel właściciela
+  // zostaje na standardowym widoku z przewijaniem.
+  const isReceptionFullscreen = role === 'reception' && isFullscreenMode;
 
   const handleLoginSuccess = () => {
     setIsLoginOpen(false);
@@ -68,10 +74,28 @@ function AdminApp() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div
+      className={
+        isReceptionFullscreen
+          ? 'h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col'
+          : 'min-h-screen bg-slate-950 text-slate-100'
+      }
+    >
       {/* Top Admin Bar */}
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header
+        className={
+          isReceptionFullscreen
+            ? 'shrink-0 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 py-1.5 z-30 shadow-sm'
+            : 'border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 sticky top-0 z-30 shadow-sm'
+        }
+      >
+        <div
+          className={
+            isReceptionFullscreen
+              ? 'flex items-center justify-between'
+              : 'max-w-7xl mx-auto flex items-center justify-between'
+          }
+        >
           <div className="flex items-center gap-3">
             <span className="text-base font-bold uppercase tracking-wider text-slate-100">
               GRAWITACJA
@@ -102,7 +126,13 @@ function AdminApp() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <main
+        className={
+          isReceptionFullscreen
+            ? 'flex-1 min-h-0 overflow-hidden px-2 py-2'
+            : 'max-w-7xl mx-auto px-4 sm:px-6 py-6'
+        }
+      >
         {role === 'reception' ? (
           <ReceptionDashboard />
         ) : (
@@ -117,7 +147,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AdminAuthProvider>
-        <AdminApp />
+        <ReceptionDisplayModeProvider>
+          <AdminApp />
+        </ReceptionDisplayModeProvider>
       </AdminAuthProvider>
     </BrowserRouter>
   );

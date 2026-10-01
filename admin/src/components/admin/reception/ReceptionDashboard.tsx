@@ -6,9 +6,11 @@ import { ReceptionStats } from './ReceptionStats';
 import { ReceptionReservations } from './ReceptionReservations';
 import { ReceptionInquiries } from './ReceptionInquiries';
 import BookingModal from '../../booking/BookingModal';
+import { useReceptionDisplayMode } from '../../../context/ReceptionDisplayModeContext';
 
 export const ReceptionDashboard: React.FC = () => {
   const { assignedLocation, logout } = useAdminAuth();
+  const { isFullscreenMode } = useReceptionDisplayMode();
 
   const [activeTab, setActiveTab] = useState<'reservations' | 'inquiries'>('reservations');
   const [isQuickBookingOpen, setIsQuickBookingOpen] = useState(false);
@@ -37,12 +39,19 @@ export const ReceptionDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 pb-12 text-left">
+    <div
+      className={
+        isFullscreenMode
+          ? 'h-full min-h-0 flex flex-col gap-2 overflow-hidden text-left'
+          : 'space-y-6 pb-12 text-left'
+      }
+    >
       {/* Reception Header */}
       <ReceptionHeader
         location={assignedLocation}
         onOpenNewBooking={() => setIsQuickBookingOpen(true)}
         onLogout={logout}
+        isFullscreenMode={isFullscreenMode}
       />
 
       {/* KPI Stats */}
@@ -51,14 +60,23 @@ export const ReceptionDashboard: React.FC = () => {
         pendingCount={stats.pending}
         confirmedCount={stats.confirmed}
         cancelledCount={stats.cancelled}
+        isFullscreenMode={isFullscreenMode}
       />
 
       {/* Tab Controls */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 w-full sm:w-auto self-start shadow-sm">
+      <div
+        className={
+          isFullscreenMode
+            ? 'shrink-0 flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 w-full self-start shadow-sm'
+            : 'flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 w-full sm:w-auto self-start shadow-sm'
+        }
+      >
         <button
           type="button"
           onClick={() => setActiveTab('reservations')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            isFullscreenMode ? 'px-3 py-1.5' : 'px-5 py-2.5'
+          } ${
             activeTab === 'reservations'
               ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -71,7 +89,9 @@ export const ReceptionDashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('inquiries')}
-          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            isFullscreenMode ? 'px-3 py-1.5' : 'px-5 py-2.5'
+          } ${
             activeTab === 'inquiries'
               ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -87,9 +107,12 @@ export const ReceptionDashboard: React.FC = () => {
         <ReceptionReservations
           location={assignedLocation}
           onReservationsLoaded={setStats}
+          isFullscreenMode={isFullscreenMode}
         />
       ) : (
-        <ReceptionInquiries location={assignedLocation} />
+        <div className={isFullscreenMode ? 'flex-1 min-h-0 overflow-auto' : ''}>
+          <ReceptionInquiries location={assignedLocation} />
+        </div>
       )}
 
       {/* Reception Manual Express Booking Modal */}

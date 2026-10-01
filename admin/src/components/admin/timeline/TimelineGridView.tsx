@@ -27,6 +27,11 @@ interface TimelineGridViewProps {
   onRefresh?: () => void;
   isLoading?: boolean;
   locationName?: string;
+  /**
+   * Tryb TV / Fit-to-Screen: siatka wypełnia dostępną wysokość i szerokość, więc
+   * wszystkie 16 zasobów oraz wszystkie godziny mieszczą się bez scrollbarów.
+   */
+  isFullscreenMode?: boolean;
 }
 
 // Operating hours displayed on the horizontal timeline: 10:00 to 24:00
@@ -53,8 +58,14 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   onRefresh,
   isLoading = false,
   locationName,
+  isFullscreenMode = false,
 }) => {
   const [resourceFilter, setResourceFilter] = useState<'all' | 'bowling' | 'billiards'>('all');
+
+  // Szerokość sticky kolumny zasobu. W trybie TV jest węższa, żeby oddać więcej
+  // miejsca na godziny - pozycję linii „teraz" liczymy z tej samej wartości.
+  const resourceColWidthClass = isFullscreenMode ? 'w-28' : 'w-48';
+  const resourceColWidthPx = isFullscreenMode ? 112 : 192;
 
   // ----- Multi-cell (click & drag) selection inside one resource row -----
   const [drag, setDrag] = useState<{
@@ -196,9 +207,19 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   }, [selectedDate]);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col text-slate-100">
+    <div
+      className={`bg-slate-900 border border-slate-800 shadow-xl overflow-hidden flex flex-col text-slate-100 ${
+        isFullscreenMode ? 'flex-1 min-h-0 rounded-xl' : 'rounded-2xl'
+      }`}
+    >
       {/* Top Bar: Date Navigator, Filters & Legend */}
-      <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div
+        className={`border-b border-slate-800 bg-slate-900/90 flex flex-col lg:flex-row items-stretch lg:items-center justify-between ${
+          isFullscreenMode
+            ? 'shrink-0 p-2 gap-2'
+            : 'p-4 sm:p-5 gap-4'
+        }`}
+      >
         {/* Date Navigator */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center rounded-xl bg-slate-950 border border-slate-800 p-1">
@@ -243,7 +264,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           </div>
 
           <div className="hidden sm:block">
-            <span className="text-sm font-semibold capitalize text-slate-200">
+            <span
+              className={`font-semibold capitalize text-slate-200 ${
+                isFullscreenMode ? 'text-xs' : 'text-sm'
+              }`}
+            >
               {formattedDateTitle}
             </span>
             {locationName && (
@@ -255,7 +280,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
         </div>
 
         {/* Filters, Legend & Refresh */}
-        <div className="flex flex-wrap items-center gap-3 self-end lg:self-center">
+        <div
+          className={`flex flex-wrap items-center self-end lg:self-center ${
+            isFullscreenMode ? 'gap-2' : 'gap-3'
+          }`}
+        >
           {/* Resource Filter */}
           <div className="flex items-center rounded-xl bg-slate-950 border border-slate-800 p-1 text-xs">
             <button
@@ -294,7 +323,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           </div>
 
           {/* Status Legend */}
-          <div className="flex items-center gap-3 text-xs bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-xl">
+          <div
+            className={`flex items-center bg-slate-950/70 border border-slate-800 rounded-xl ${
+              isFullscreenMode ? 'gap-2 text-[10px] px-2 py-1' : 'gap-3 text-xs px-3 py-1.5'
+            }`}
+          >
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded bg-amber-400 border border-amber-300" />
               <span className="text-slate-300 font-medium">Oczekuje ({pendingCount})</span>
@@ -321,7 +354,9 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
       {/* Live selection / hint bar for the click & drag booking flow */}
       {(dragLabel || gridNotice) && (
         <div
-          className={`px-5 py-2 text-xs border-b flex items-center gap-2 ${
+          className={`border-b flex items-center gap-2 ${
+            isFullscreenMode ? 'shrink-0 px-3 py-1 text-[10px]' : 'px-5 py-2 text-xs'
+          } ${
             gridNotice
               ? 'border-amber-800/60 bg-amber-950/40 text-amber-200'
               : 'border-cyan-800/60 bg-cyan-950/40 text-cyan-200'
@@ -333,24 +368,38 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
       )}
 
       {/* Main Grid View Container with sticky left column */}
-      <div className="relative overflow-x-auto select-none">
-        <div className="min-w-[1200px]">
+      <div
+        className={`relative select-none ${
+          isFullscreenMode ? 'flex-1 min-h-0 overflow-hidden flex flex-col' : 'overflow-x-auto'
+        }`}
+      >
+        <div className={isFullscreenMode ? 'flex-1 min-h-0 flex flex-col min-w-0' : 'min-w-[1200px]'}>
           {/* Header Row: Hours Timeline */}
-          <div className="flex border-b border-slate-800 bg-slate-950/80 sticky top-0 z-20">
+          <div
+            className={`flex border-b border-slate-800 bg-slate-950/80 sticky top-0 z-20 ${
+              isFullscreenMode ? 'shrink-0' : ''
+            }`}
+          >
             {/* Sticky Resource Title Cell (Updated Header: ZASÓB (Tor / Stół)) */}
-            <div className="w-48 shrink-0 px-4 py-3 font-semibold text-xs text-slate-300 uppercase tracking-wider border-r border-slate-800 bg-slate-950 sticky left-0 z-30 flex items-center justify-between">
-              <span>ZASÓB (Tor / Stół)</span>
+            <div
+              className={`${resourceColWidthClass} shrink-0 font-semibold text-slate-300 uppercase tracking-wider border-r border-slate-800 bg-slate-950 sticky left-0 z-30 flex items-center justify-between ${
+                isFullscreenMode ? 'px-2 py-1 text-[10px]' : 'px-4 py-3 text-xs'
+              }`}
+            >
+              <span className="truncate">ZASÓB (Tor / Stół)</span>
               <span className="text-[10px] text-slate-500 font-mono">
                 {sortedAndFilteredResources.length}
               </span>
             </div>
 
             {/* Hour Columns Header */}
-            <div className="flex-1 grid grid-cols-14 relative">
+            <div className="flex-1 grid grid-cols-14 relative min-w-0">
               {HOURS_LIST.map((hour) => (
                 <div
                   key={hour}
-                  className="py-3 px-2 text-center text-xs font-mono font-medium text-slate-400 border-r border-slate-800/80 last:border-r-0"
+                  className={`text-center font-mono font-medium text-slate-400 border-r border-slate-800/80 last:border-r-0 ${
+                    isFullscreenMode ? 'py-1 px-0.5 text-[10px]' : 'py-3 px-2 text-xs'
+                  }`}
                 >
                   {hour}:00
                 </div>
@@ -359,13 +408,19 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           </div>
 
           {/* Resources Rows */}
-          <div className="divide-y divide-slate-800/70 relative">
+          <div
+            className={`divide-y divide-slate-800/70 relative ${
+              isFullscreenMode ? 'flex-1 min-h-0 flex flex-col' : ''
+            }`}
+          >
             {/* Current Time Indicator Line across rows */}
             {currentTimePositionPercent !== null && (
               <div
                 className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
                 style={{
-                  left: `calc(192px + (100% - 192px) * ${currentTimePositionPercent / 100})`,
+                  left: `calc(${resourceColWidthPx}px + (100% - ${resourceColWidthPx}px) * ${
+                    currentTimePositionPercent / 100
+                  })`,
                 }}
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-md -mt-1" />
@@ -374,7 +429,7 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
             )}
 
             {sortedAndFilteredResources.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 text-sm">
+              <div className={`p-12 text-center text-slate-500 text-sm ${isFullscreenMode ? 'flex-1' : ''}`}>
                 Brak zasobów spełniających kryteria.
               </div>
             ) : (
@@ -411,40 +466,76 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
                   <React.Fragment key={resource.id}>
                     {/* Visual Section Divider between Bowling and Billiards */}
                     {isFirstBilliards && (
-                      <div className="flex border-y border-slate-800/90 bg-slate-950 text-xs font-semibold">
-                        <div className="w-48 shrink-0 px-4 py-2 border-r border-slate-800 bg-slate-950 sticky left-0 z-10 flex items-center gap-2 text-emerald-400 tracking-wider">
-                          <Dices className="w-3.5 h-3.5" />
-                          <span>STOŁY BILARDOWE</span>
+                      <div
+                        className={`flex border-y border-slate-800/90 bg-slate-950 text-xs font-semibold ${
+                          isFullscreenMode ? 'shrink-0' : ''
+                        }`}
+                      >
+                        <div
+                          className={`${resourceColWidthClass} shrink-0 border-r border-slate-800 bg-slate-950 sticky left-0 z-10 flex items-center gap-2 text-emerald-400 tracking-wider ${
+                            isFullscreenMode ? 'px-2 py-0.5 text-[9px]' : 'px-4 py-2'
+                          }`}
+                        >
+                          <Dices className={isFullscreenMode ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                          <span className="truncate">STOŁY BILARDOWE</span>
                         </div>
-                        <div className="flex-1 px-4 py-2 text-slate-500 text-[11px] font-medium flex items-center bg-slate-950/70">
+                        <div
+                          className={`flex-1 px-4 text-slate-500 font-medium flex items-center bg-slate-950/70 ${
+                            isFullscreenMode ? 'py-0.5 text-[10px]' : 'py-2 text-[11px]'
+                          }`}
+                        >
                           Strefa Stołów Bilardowych
                         </div>
                       </div>
                     )}
 
-                    <div className="flex group hover:bg-slate-800/20 transition-colors min-h-[58px]">
+                    <div
+                      className={`flex group hover:bg-slate-800/20 transition-colors ${
+                        isFullscreenMode ? 'flex-1 min-h-0' : 'min-h-[58px]'
+                      }`}
+                    >
                       {/* Sticky Resource Info Cell */}
-                      <div className="w-48 shrink-0 px-4 py-2.5 border-r border-slate-800 bg-slate-900 sticky left-0 z-10 flex items-center gap-3">
-                        <div className={`p-2 rounded-xl border ${
-                          isBowling
-                            ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        }`}>
-                          {isBowling ? <CircleDot className="w-4 h-4" /> : <Dices className="w-4 h-4" />}
+                      <div
+                        className={`${resourceColWidthClass} shrink-0 border-r border-slate-800 bg-slate-900 sticky left-0 z-10 flex items-center ${
+                          isFullscreenMode ? 'px-2 py-1 gap-1.5' : 'px-4 py-2.5 gap-3'
+                        }`}
+                      >
+                        <div
+                          className={`rounded-lg border shrink-0 ${
+                            isFullscreenMode ? 'p-1' : 'p-2 rounded-xl'
+                          } ${
+                            isBowling
+                              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                          }`}
+                        >
+                          {isBowling ? (
+                            <CircleDot className={isFullscreenMode ? 'w-3 h-3' : 'w-4 h-4'} />
+                          ) : (
+                            <Dices className={isFullscreenMode ? 'w-3 h-3' : 'w-4 h-4'} />
+                          )}
                         </div>
 
                         <div className="overflow-hidden">
-                          <div className="font-semibold text-xs text-slate-100 truncate flex items-center gap-1.5">
+                          <div
+                            className={`font-semibold text-slate-100 truncate flex items-center gap-1.5 ${
+                              isFullscreenMode ? 'text-[11px]' : 'text-xs'
+                            }`}
+                          >
                             <span>{displayName}</span>
                           </div>
-                          <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                          <span
+                            className={`font-medium text-slate-400 uppercase tracking-wider block ${
+                              isFullscreenMode ? 'text-[8px]' : 'text-[10px]'
+                            }`}
+                          >
                             {isBowling ? 'TOR KRĘGLI' : 'BILARD'}
                           </span>
                         </div>
                       </div>
 
                       {/* Timeline Hour Grid Cells + Rendered Reservations */}
-                      <div className="flex-1 grid grid-cols-14 relative bg-slate-900/40">
+                      <div className="flex-1 grid grid-cols-14 relative bg-slate-900/40 min-w-0">
                         {/* Hour Grid Slots: click a single cell or click & drag a range */}
                         {HOURS_LIST.map((hour) => {
                           const occupied = occupiedHours.has(hour);
@@ -529,7 +620,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
                                 left: `${leftPercent}%`,
                                 width: `${widthPercent}%`,
                               }}
-                              className={`absolute top-1.5 bottom-1.5 mx-0.5 rounded-xl border px-2.5 py-1 cursor-pointer transition-all duration-150 z-10 flex flex-col justify-center overflow-hidden shadow-sm ${
+                              className={`absolute mx-0.5 rounded-xl border cursor-pointer transition-all duration-150 z-10 flex flex-col justify-center overflow-hidden shadow-sm ${
+                                isFullscreenMode
+                                  ? 'top-0.5 bottom-0.5 rounded-lg px-1.5 py-0.5'
+                                  : 'top-1.5 bottom-1.5 px-2.5 py-1'
+                              } ${
                                 isPending
                                   ? 'bg-amber-400/20 hover:bg-amber-400/30 border-amber-400 text-amber-200'
                                   : 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-400 text-emerald-200'
@@ -537,33 +632,43 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
                               title={`Rezerwacja: ${booking.client_name} (${booking.start_time} - ${booking.end_time}) - Kliknij, aby otworzyć szczegóły`}
                             >
                               <div className="flex items-center justify-between gap-1 leading-tight">
-                                <span className="font-bold text-xs truncate">
+                                <span
+                                  className={`font-bold truncate ${
+                                    isFullscreenMode ? 'text-[10px]' : 'text-xs'
+                                  }`}
+                                >
                                   {booking.client_name}
                                 </span>
-                                <span className="shrink-0 text-[10px] font-mono font-semibold px-1 rounded bg-black/40">
+                                <span
+                                  className={`shrink-0 font-mono font-semibold px-1 rounded bg-black/40 ${
+                                    isFullscreenMode ? 'text-[9px]' : 'text-[10px]'
+                                  }`}
+                                >
                                   {booking.start_time}-{booking.end_time}
                                 </span>
                               </div>
 
-                              <div className="flex items-center justify-between gap-1 text-[10px] mt-0.5 opacity-90">
-                                <span className="flex items-center gap-1">
-                                  {isPending ? (
-                                    <>
-                                      <Clock className="w-3 h-3 text-amber-300 animate-pulse" />
-                                      <span className="font-medium text-amber-300">Oczekuje</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-300" />
-                                      <span>Aktywna</span>
-                                    </>
-                                  )}
-                                </span>
-                                <span className="flex items-center gap-0.5 font-mono">
-                                  <Users className="w-3 h-3" />
-                                  {booking.guests_count} os.
-                                </span>
-                              </div>
+                              {!isFullscreenMode && (
+                                <div className="flex items-center justify-between gap-1 text-[10px] mt-0.5 opacity-90">
+                                  <span className="flex items-center gap-1">
+                                    {isPending ? (
+                                      <>
+                                        <Clock className="w-3 h-3 text-amber-300 animate-pulse" />
+                                        <span className="font-medium text-amber-300">Oczekuje</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-300" />
+                                        <span>Aktywna</span>
+                                      </>
+                                    )}
+                                  </span>
+                                  <span className="flex items-center gap-0.5 font-mono">
+                                    <Users className="w-3 h-3" />
+                                    {booking.guests_count} os.
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -578,7 +683,11 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+      <div
+        className={`border-t border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-2 shrink-0 ${
+          isFullscreenMode ? 'px-3 py-1 text-[10px]' : 'px-5 py-3 text-xs'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <span>Łącznie w dniu dzisiejszym:</span>
           <span className="font-semibold text-slate-200">{dayReservations.length} rezerwacji</span>
@@ -587,10 +696,12 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           <span>•</span>
           <span className="text-emerald-300 font-medium">{confirmedCount} potwierdzonych</span>
         </div>
-        <div className="text-[11px] text-slate-500">
-          Kliknij na żółtą lub zieloną rezerwację, aby zobaczyć szczegóły. Przeciągnij po wolnych
-          komórkach jednego rzędu, aby zarezerwować kilka godzin naraz.
-        </div>
+        {!isFullscreenMode && (
+          <div className="text-[11px] text-slate-500">
+            Kliknij na żółtą lub zieloną rezerwację, aby zobaczyć szczegóły. Przeciągnij po wolnych
+            komórkach jednego rzędu, aby zarezerwować kilka godzin naraz.
+          </div>
+        )}
       </div>
     </div>
   );
