@@ -6,8 +6,6 @@ interface ReceptionStatsProps {
   pendingCount: number;
   confirmedCount: number;
   cancelledCount: number;
-  /** Tryb pełnoekranowy - mniejsze karty KPI, żeby oddać miejsce na siatkę. */
-  isFullscreenMode?: boolean;
 }
 
 export const ReceptionStats: React.FC<ReceptionStatsProps> = ({
@@ -15,7 +13,6 @@ export const ReceptionStats: React.FC<ReceptionStatsProps> = ({
   pendingCount,
   confirmedCount,
   cancelledCount,
-  isFullscreenMode = false,
 }) => {
   const cards = [
     {
@@ -49,44 +46,24 @@ export const ReceptionStats: React.FC<ReceptionStatsProps> = ({
   ];
 
   return (
-    <div
-      className={
-        isFullscreenMode
-          ? 'shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2'
-          : 'grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'
-      }
-    >
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {cards.map((card, idx) => {
         const Icon = card.icon;
         return (
           <div
             key={idx}
-            className={`rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-between ${
-              isFullscreenMode ? 'px-3 py-1.5' : 'p-4 sm:p-5'
-            }`}
+            className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex items-center justify-between"
           >
-            <div className="min-w-0">
-              <span
-                className={`font-medium text-slate-400 uppercase tracking-wide block ${
-                  isFullscreenMode ? 'text-[9px] mb-0' : 'text-[11px] mb-1'
-                }`}
-              >
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide block mb-1">
                 {card.title}
               </span>
-              <span
-                className={`font-bold text-slate-100 font-mono ${
-                  isFullscreenMode ? 'text-lg' : 'text-2xl sm:text-3xl'
-                }`}
-              >
+              <span className="text-2xl sm:text-3xl font-bold text-slate-100 font-mono">
                 {card.value}
               </span>
             </div>
-            <div
-              className={`rounded-xl border ${card.badgeColor} ${
-                isFullscreenMode ? 'p-1.5' : 'p-2.5'
-              }`}
-            >
-              <Icon className={`${isFullscreenMode ? 'w-3.5 h-3.5' : 'w-5 h-5'} ${card.iconColor}`} />
+            <div className={`p-2.5 rounded-xl border ${card.badgeColor}`}>
+              <Icon className={`w-5 h-5 ${card.iconColor}`} />
             </div>
           </div>
         );

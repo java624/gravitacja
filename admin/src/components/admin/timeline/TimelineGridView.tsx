@@ -15,6 +15,11 @@ import {
 import type { Reservation, Resource } from '../../../types/booking';
 import type { TimelineQuickSelection } from './quickBooking';
 import { extractNumber, formatResourceDisplayName } from './resourceDisplay';
+import {
+  formatDateTitlePL,
+  getTodayISODate,
+  shiftDateISO,
+} from './dateNavigation';
 
 interface TimelineGridViewProps {
   resources: Resource[];
@@ -47,6 +52,7 @@ const parseTimeToHours = (timeStr: string): number => {
 };
 
 // Resource naming helpers live in ./resourceDisplay (shared with the quick modal)
+// Date helpers live in ./dateNavigation (shared with the reception TV header bar)
 
 export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   resources,
@@ -124,7 +130,7 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [drag, dragRange, onQuickBook, selectedDate]);
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getTodayISODate(), []);
   const isToday = selectedDate === todayStr;
 
   // Filter & sort resources: 1) all bowling (Tor 1..12) first, 2) all billiards (Stół 1..X) next
@@ -175,36 +181,16 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
   const confirmedCount = dayReservations.filter((r) => r.status === 'confirmed').length;
 
   // Navigation handlers
-  const handlePrevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    onDateChange(d.toISOString().split('T')[0]);
-  };
+  const handlePrevDay = () => onDateChange(shiftDateISO(selectedDate, -1));
 
-  const handleNextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    onDateChange(d.toISOString().split('T')[0]);
-  };
+  const handleNextDay = () => onDateChange(shiftDateISO(selectedDate, 1));
 
   const handleToday = () => {
     onDateChange(todayStr);
   };
 
   // Formatted date string in Polish
-  const formattedDateTitle = useMemo(() => {
-    try {
-      const d = new Date(selectedDate + 'T12:00:00');
-      return d.toLocaleDateString('pl-PL', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-    } catch {
-      return selectedDate;
-    }
-  }, [selectedDate]);
+  const formattedDateTitle = useMemo(() => formatDateTitlePL(selectedDate), [selectedDate]);
 
   return (
     <div
@@ -220,8 +206,17 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
             : 'p-4 sm:p-5 gap-4'
         }`}
       >
-        {/* Date Navigator */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Date Navigator.
+            TV mode: hidden on purpose - the thin reception header bar owns the
+            day navigation now, so showing it here would duplicate the same
+            control in two places (and waste ~60px of vertical space). */}
+        <div
+          className={
+            isFullscreenMode
+              ? 'hidden'
+              : 'flex flex-wrap items-center gap-2 sm:gap-3'
+          }
+        >
           <div className="flex items-center rounded-xl bg-slate-950 border border-slate-800 p-1">
             <button
               type="button"
@@ -264,11 +259,7 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
           </div>
 
           <div className="hidden sm:block">
-            <span
-              className={`font-semibold capitalize text-slate-200 ${
-                isFullscreenMode ? 'text-xs' : 'text-sm'
-              }`}
-            >
+            <span className="text-sm font-semibold capitalize text-slate-200">
               {formattedDateTitle}
             </span>
             {locationName && (
@@ -281,12 +272,16 @@ export const TimelineGridView: React.FC<TimelineGridViewProps> = ({
 
         {/* Filters, Legend & Refresh */}
         <div
-          className={`flex flex-wrap items-center self-end lg:self-center ${
-            isFullscreenMode ? 'gap-2' : 'gap-3'
+          className={`flex flex-wrap items-center ${
+            isFullscreenMode ? 'gap-2 self-start' : 'gap-3 self-end lg:self-center'
           }`}
         >
           {/* Resource Filter */}
-          <div className="flex items-center rounded-xl bg-slate-950 border border-slate-800 p-1 text-xs">
+          <div
+            className={`flex items-center rounded-xl bg-slate-950 border border-slate-800 ${
+              isFullscreenMode ? 'p-0.5 text-[10px]' : 'p-1 text-xs'
+            }`}
+          >
             <button
               type="button"
               onClick={() => setResourceFilter('all')}

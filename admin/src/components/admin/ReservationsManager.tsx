@@ -25,6 +25,13 @@ interface ReservationsManagerProps {
   allowDelete?: boolean;
   /** Tryb pełnoekranowy (recepcja): siatka wypełnia 100% wysokości bez scrollbarów. */
   isFullscreenMode?: boolean;
+  /**
+   * Opcjonalne sterowanie datą z góry. Używane przez pasek TV, żeby nawigacja
+   * po dniach była w jednym miejscu. Gdy nieprzekazane (panel właściciela),
+   * data siedzi w lokalnym stanie - jak dotychczas.
+   */
+  selectedDate?: string;
+  onDateChange?: (date: string) => void;
 }
 
 export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
@@ -34,6 +41,8 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   onStatsUpdated,
   allowDelete = false,
   isFullscreenMode = false,
+  selectedDate,
+  onDateChange,
 }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -41,7 +50,9 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   const [viewMode, setViewMode] = useState<AdminViewMode>('timeline');
 
   // Selected date for timeline view
-  const [timelineDate, setTimelineDate] = useState<string>(todayStr);
+  const [internalTimelineDate, setInternalTimelineDate] = useState<string>(todayStr);
+  const timelineDate = selectedDate ?? internalTimelineDate;
+  const setTimelineDate = onDateChange ?? setInternalTimelineDate;
 
   // Filters for table view
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('all');

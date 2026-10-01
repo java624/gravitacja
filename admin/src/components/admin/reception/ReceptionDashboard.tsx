@@ -3,10 +3,12 @@ import { Calendar, MessageSquare, ShieldAlert } from 'lucide-react';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 import { ReceptionHeader } from './ReceptionHeader';
 import { ReceptionStats } from './ReceptionStats';
+import { ReceptionFullscreenBar } from './ReceptionFullscreenBar';
 import { ReceptionReservations } from './ReceptionReservations';
 import { ReceptionInquiries } from './ReceptionInquiries';
 import BookingModal from '../../booking/BookingModal';
 import { useReceptionDisplayMode } from '../../../context/ReceptionDisplayModeContext';
+import { getTodayISODate } from '../timeline/dateNavigation';
 
 export const ReceptionDashboard: React.FC = () => {
   const { assignedLocation, logout } = useAdminAuth();
@@ -14,6 +16,11 @@ export const ReceptionDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'reservations' | 'inquiries'>('reservations');
   const [isQuickBookingOpen, setIsQuickBookingOpen] = useState(false);
+
+  // Data siatki jest trzymana tutaj, bo w trybie TV nawigacja po dniach siedzi
+  // w wąskim pasku nagłówka, a nie w pasku narzędzi siatki. Ten sam stan i te same
+  // przyciski obsługują oba widoki, więc data nie może się rozjechać.
+  const [timelineDate, setTimelineDate] = useState<string>(() => getTodayISODate());
 
   const [stats, setStats] = useState({
     total: 0,
@@ -46,22 +53,33 @@ export const ReceptionDashboard: React.FC = () => {
           : 'space-y-6 pb-12 text-left'
       }
     >
-      {/* Reception Header */}
-      <ReceptionHeader
-        location={assignedLocation}
-        onOpenNewBooking={() => setIsQuickBookingOpen(true)}
-        onLogout={logout}
-        isFullscreenMode={isFullscreenMode}
-      />
+      {/* Reception Header.
+          TV mode: one thin ~40px bar replaces the big banner AND the 4 KPI cards.
+          Normal mode / owner panel: untouched original header + stats. */}
+      {isFullscreenMode ? (
+        <ReceptionFullscreenBar
+          location={assignedLocation}
+          selectedDate={timelineDate}
+          onDateChange={setTimelineDate}
+          onOpenNewBooking={() => setIsQuickBookingOpen(true)}
+        />
+      ) : (
+        <>
+          <ReceptionHeader
+            location={assignedLocation}
+            onOpenNewBooking={() => setIsQuickBookingOpen(true)}
+            onLogout={logout}
+          />
 
-      {/* KPI Stats */}
-      <ReceptionStats
-        totalCount={stats.total}
-        pendingCount={stats.pending}
-        confirmedCount={stats.confirmed}
-        cancelledCount={stats.cancelled}
-        isFullscreenMode={isFullscreenMode}
-      />
+          {/* KPI Stats */}
+          <ReceptionStats
+            totalCount={stats.total}
+            pendingCount={stats.pending}
+            confirmedCount={stats.confirmed}
+            cancelledCount={stats.cancelled}
+          />
+        </>
+      )}
 
       {/* Tab Controls */}
       <div
@@ -108,6 +126,8 @@ export const ReceptionDashboard: React.FC = () => {
           location={assignedLocation}
           onReservationsLoaded={setStats}
           isFullscreenMode={isFullscreenMode}
+          selectedDate={timelineDate}
+          onDateChange={setTimelineDate}
         />
       ) : (
         <div className={isFullscreenMode ? 'flex-1 min-h-0 overflow-auto' : ''}>
