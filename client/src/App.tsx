@@ -38,7 +38,7 @@ function AppContent() {
       <Header />
 
       {/* Main Content Area with top spacing for fixed header */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex-1 w-full">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-8 flex-1 w-full">
         <Routes>
           <Route path="/" element={<LandingPage />} />
 
