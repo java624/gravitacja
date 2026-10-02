@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowUpRight, Phone, MapPin, Clock, Tag } from 'lucide-react';
+import { Sparkles, ArrowUpRight, MapPin, Clock, Tag } from 'lucide-react';
 import { LOCATIONS_DATA } from '../data/locationsData';
 import { PROMOTIONS_DATA } from '../data/promotionsData';
 import { useLocationContext, type LocationSlug } from '../context/LocationContext';
 import LocationQuickGrid from '../components/location/LocationQuickGrid';
 import LocationFeatures from '../components/location/LocationFeatures';
 import PromotionCard from '../components/katowice/PromotionCard';
+import PhoneIsland from '../components/ui/PhoneIsland';
 import LaneDivider from '../components/ui/LaneDivider';
 
 export default function LocationPage() {
@@ -85,14 +86,11 @@ export default function LocationPage() {
                 <Tag className="w-4 h-4 text-purple-400" />
                 <span>Zobacz Cennik</span>
               </button>
+            </div>
 
-              <a
-                href={`tel:${location.phoneClean}`}
-                className="w-full sm:w-auto justify-center px-6 py-3.5 sm:py-4 rounded-2xl text-xs font-black tracking-widest uppercase text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2 active:scale-98"
-              >
-                <Phone className="w-4 h-4 text-orange-400" />
-                <span>Zadzwoń</span>
-              </a>
+            {/* Phone Island - wypadło z Headera, żeby pasek pozostał minimalistyczny */}
+            <div className="pt-1 sm:pt-2">
+              <PhoneIsland locationSlug={validSlug} />
             </div>
           </div>
 

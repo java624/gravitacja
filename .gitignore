@@ -145,3 +145,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local build/verification scratch files (created by tooling, never source)
+*_tsc.txt
+*_build.txt
+tscres.txt
+status.txt
+st.txt
+push.txt
+verify.txt
