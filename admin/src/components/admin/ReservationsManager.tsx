@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LayoutGrid, ListFilter, AlertTriangle, CalendarDays } from 'lucide-react';
 import type { Reservation, ReservationFilter, ReservationStatus, Resource, LocationSlug } from '../../types/booking';
 import { fetchReservations, updateReservationStatus, deleteReservation, isSupabaseConfigured } from '../../lib/supabase';
@@ -77,6 +77,28 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   // Current active location slug for queries
   const activeLocationSlug = location && location !== 'all' ? location : 'katowice';
 
+  // ---------------------------------------------------------------------------
+  // Stabilność tożsamości callbacków (to było źródło nieskończonej pętli fetch)
+  // ---------------------------------------------------------------------------
+  // Rodzic przekazuje `onStatsUpdated` jako INLINE ARROW, np.
+  //   onStatsUpdated={(newStats) => setStats(newStats)}
+  // Każdy jego render tworzy nową referencję funkcji. Gdyby `onStatsUpdated`
+  // znalazł się w zależnościach `useCallback` poniżej, to:
+  //   nowa referencja -> nowy `loadReservations` -> useEffect odpala fetch ->
+  //   fetch wywołuje `onStatsUpdated` -> setStats z NOWYM obiektem ->
+  //   rodzic renderuje się ponownie -> pętla w nieskończoność.
+  // Dlatego trzymamy callback w `ref`: jego tożsamość nie wpływa na
+  // `loadReservations`, a wartość zawsze jest aktualna.
+  const onStatsUpdatedRef = useRef(onStatsUpdated);
+  useEffect(() => {
+    onStatsUpdatedRef.current = onStatsUpdated;
+  }, [onStatsUpdated]);
+
+  // Licznik zapytań: ignorujemy odpowiedzi, które wróciły po nowszym zapytaniu
+  // (szybkie przełączanie dat / trybów). Bez tego widok skakałby między
+  // starymi i nowymi danymi.
+  const requestIdRef = useRef(0);
+
   // Load resources for current location
   const loadResources = useCallback(async () => {
     try {
@@ -87,56 +109,71 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
     }
   }, [activeLocationSlug]);
 
+  // Wszystkie wejścia zapytania sprowadzamy do PRYMITYWÓW (string / undefined).
+  // Obiekt `filter` jest nowy przy każdym renderze, więc gdyby trafił do
+  // `useMemo` jako całość, i tak nie dawałby stabilności - liczymy go
+  // bezpośrednio z prymitywów, a zależności useCallback są już prymitywami.
+  const tableDateFilter =
+    selectedDateFilter === 'today'
+      ? todayStr
+      : selectedDateFilter === 'custom'
+        ? customTableDate
+        : undefined;
+  const statusFilter = selectedStatus !== 'all' ? selectedStatus : undefined;
+  const searchFilter = searchQuery.trim() || undefined;
+  const locationFilter = location !== 'all' ? location : undefined;
+
   // Load reservations based on mode & filters
   const loadReservations = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setLoadError(null);
     try {
-      const filter: ReservationFilter = {
-        location_slug: location !== 'all' ? location : undefined,
-      };
+      const filter: ReservationFilter = { location_slug: locationFilter };
 
       if (viewMode === 'timeline') {
         // Timeline view loads reservations for the selected timeline date
         filter.date = timelineDate;
       } else {
         // Table view uses table filters
-        filter.date =
-          selectedDateFilter === 'today'
-            ? todayStr
-            : selectedDateFilter === 'custom'
-              ? customTableDate
-              : undefined;
-        filter.status = selectedStatus !== 'all' ? selectedStatus : undefined;
-        filter.searchQuery = searchQuery.trim() || undefined;
+        filter.date = tableDateFilter;
+        filter.status = statusFilter;
+        filter.searchQuery = searchFilter;
       }
 
       const data = await fetchReservations(filter);
+      // Starsze zapytanie nie może nadpisać wyniku nowszego.
+      if (requestId !== requestIdRef.current) return;
+
       setReservations(data);
 
-      if (onStatsUpdated) {
-        const total = data.length;
-        const pending = data.filter((r) => r.status === 'pending').length;
-        const confirmed = data.filter((r) => r.status === 'confirmed').length;
-        const cancelled = data.filter((r) => r.status === 'cancelled').length;
-        onStatsUpdated({ total, pending, confirmed, cancelled });
+      const statsCallback = onStatsUpdatedRef.current;
+      if (statsCallback) {
+        statsCallback({
+          total: data.length,
+          pending: data.filter((r) => r.status === 'pending').length,
+          confirmed: data.filter((r) => r.status === 'confirmed').length,
+          cancelled: data.filter((r) => r.status === 'cancelled').length,
+        });
       }
     } catch (err: any) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error loading reservations:', err);
       setLoadError(err?.message || 'Nie udało się wczytać rezerwacji.');
     } finally {
-      setIsLoading(false);
+      // Sprawdzamy requestId także tutaj: wycofane zapytanie nie może zdjąć
+      // spinnera z nowszego, którego jeszcze trwa.
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [
-    location,
+    locationFilter,
     viewMode,
     timelineDate,
-    selectedDateFilter,
-    customTableDate,
-    selectedStatus,
-    searchQuery,
-    todayStr,
-    onStatsUpdated,
+    tableDateFilter,
+    statusFilter,
+    searchFilter,
   ]);
 
   useEffect(() => {
@@ -144,7 +181,7 @@ export const ReservationsManager: React.FC<ReservationsManagerProps> = ({
   }, [loadResources]);
 
   useEffect(() => {
-    loadReservations();
+    void loadReservations();
   }, [loadReservations]);
 
   // Status update handler (Confirm / Reject)

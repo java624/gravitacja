@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Calendar, Utensils, Gift, Cake, Tag, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 import type { LocationSlug, Reservation, ReservationFilter, ReservationStatus } from '../../../types/booking';
@@ -35,32 +35,52 @@ export const OwnerDashboard: React.FC = () => {
   // Admin New Reservation Modal
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === 'reservations') {
-      loadReservations();
-    }
-  }, [activeTab, ownerCityFilter, selectedDate, customDate, selectedStatus, searchQuery]);
+  // Licznik zapytań: odpowiedź wycofanego zapytania nie może nadpisać wyniku
+  // nowszego (szybkie klikanie filtrów). Bez tego lista skakała między
+  // starymi i nowymi danymi.
+  const requestIdRef = useRef(0);
 
-  const loadReservations = async () => {
+  // Wszystkie wejścia zapytania sprowadzamy do prymitywów, dzięki czemu
+  // `useCallback` ma stabilną listę zależności i `useEffect` nie odpala się
+  // na każdym renderze.
+  const dateFilter =
+    selectedDate === 'today' ? todayStr : selectedDate === 'custom' ? customDate : undefined;
+  const statusFilter = selectedStatus !== 'all' ? selectedStatus : undefined;
+  const searchFilter = searchQuery.trim() || undefined;
+  const locationFilter = ownerCityFilter !== 'all' ? ownerCityFilter : undefined;
+
+  const loadReservations = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setLoadError(null);
     try {
       const filter: ReservationFilter = {
-        location_slug: ownerCityFilter !== 'all' ? ownerCityFilter : undefined,
-        date: selectedDate === 'today' ? todayStr : selectedDate === 'custom' ? customDate : undefined,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        searchQuery: searchQuery.trim() || undefined,
+        location_slug: locationFilter,
+        date: dateFilter,
+        status: statusFilter,
+        searchQuery: searchFilter,
       };
 
       const data = await fetchReservations(filter);
+      if (requestId !== requestIdRef.current) return; // wycofane zapytanie
       setReservations(data);
     } catch (err: any) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error loading reservations for owner:', err);
       setLoadError(err?.message || 'Nie udało się wczytać rezerwacji z bazy danych.');
     } finally {
-      setIsLoading(false);
+      // Spinner zdejmuje wyłącznie zapytanie, które jest nadal aktualne.
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [locationFilter, dateFilter, statusFilter, searchFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'reservations') {
+      void loadReservations();
+    }
+  }, [activeTab, loadReservations]);
 
   const handleStatusUpdate = async (id: string, newStatus: ReservationStatus) => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Calendar, Utensils, Gift, Cake, Tag, ShieldCheck } from 'lucide-react';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 import type { LocationSlug } from '../../../types/booking';
@@ -30,13 +30,36 @@ export const OwnerDashboard: React.FC = () => {
   // Admin New Reservation Express Modal
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
+  // Stabilne handlery przekazywane dziecku.
+  //
+  // Inline arrow w JSX (`{(v) => setX(v)}`) tworzy nową referencję przy każdym
+  // renderze. Dziecko trzyma ją w zależnościach `useCallback`, więc każdy render
+  // rodzica odpalał w nim `useEffect` od nowa - a ponieważ wywołanie
+  // `setStats` waliduje się nowym obiektem, powstawała nieskończona pętla
+  // fetch (migotanie listy i "znikanie" trybu tabeli). `useCallback` utrzymuje
+  // tożsamość funkcji między renderami.
+  const handleLocationChange = useCallback((val: LocationSlug | 'all') => {
+    setOwnerCityFilter(val);
+  }, []);
+
+  const handleStatsUpdated = useCallback(
+    (newStats: { total: number; pending: number; confirmed: number; cancelled: number }) => {
+      // Nowy obiekt przy każdym wywołaniu i tak wymusza render rodzica, więc
+      // nie blokujemy go - zależności `useCallback` są już stabilne.
+      setStats(newStats);
+    },
+    []
+  );
+
+  const handleOpenNewBooking = useCallback(() => setIsBookingModalOpen(true), []);
+
   return (
     <div className="space-y-6 pb-12 text-left">
       {/* Owner Header */}
       <OwnerHeader
         selectedCityFilter={ownerCityFilter}
         onCityFilterChange={setOwnerCityFilter}
-        onOpenNewBooking={() => setIsBookingModalOpen(true)}
+        onOpenNewBooking={handleOpenNewBooking}
         onLogout={logout}
       />
 
@@ -135,8 +158,8 @@ export const OwnerDashboard: React.FC = () => {
         <ReservationsManager
           location={ownerCityFilter}
           isLocationLocked={false}
-          onLocationChange={(val) => setOwnerCityFilter(val as LocationSlug | 'all')}
-          onStatsUpdated={(newStats) => setStats(newStats)}
+          onLocationChange={handleLocationChange}
+          onStatsUpdated={handleStatsUpdated}
           allowDelete={true}
         />
       ) : activeTab === 'menu' ? (

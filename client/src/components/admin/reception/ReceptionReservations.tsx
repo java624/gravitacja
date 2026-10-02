@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Reservation, ReservationFilter, ReservationStatus } from '../../../types/booking';
 import type { AdminLocation } from '../../../types/auth';
 import { fetchReservations, updateReservationStatus, isSupabaseConfigured } from '../../../lib/supabase';
@@ -32,40 +32,70 @@ export const ReceptionReservations: React.FC<ReceptionReservationsProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Callback trzymany w `ref`, a nie w zależnościach `useCallback`.
+  // Rodzic przekazuje `onReservationsLoaded` jako referencję z `useState`
+  // (stabilną), ale gdyby kiedyś przekazał inline arrow, jego tożsamość
+  // zmieniałaby się na każdym renderze i odpalałaby `useEffect` w kółko -
+  // a wywołanie z nowym obiektem zamykałoby pętlę fetch.
+  const onReservationsLoadedRef = useRef(onReservationsLoaded);
   useEffect(() => {
-    if (location) {
-      loadReservations();
-    }
-  }, [location, selectedDate, customDate, selectedStatus, searchQuery]);
+    onReservationsLoadedRef.current = onReservationsLoaded;
+  }, [onReservationsLoaded]);
 
-  const loadReservations = async () => {
+  // Licznik zapytań chroni przed wyścigiem: odpowiedź wycofanego zapytania
+  // nie może nadpisać wyniku nowszego.
+  const requestIdRef = useRef(0);
+
+  // Zależności useCallback to same prymitywy, więc `loadReservations` ma
+  // stabilną tożsamość, a useEffect poniżej nie odpala się na każdym renderze.
+  const dateFilter =
+    selectedDate === 'today' ? todayStr : selectedDate === 'custom' ? customDate : undefined;
+  const statusFilter = selectedStatus !== 'all' ? selectedStatus : undefined;
+  const searchFilter = searchQuery.trim() || undefined;
+  const locationFilter = location || undefined;
+
+  const loadReservations = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setLoadError(null);
     try {
       const filter: ReservationFilter = {
-        location_slug: location || undefined,
-        date: selectedDate === 'today' ? todayStr : selectedDate === 'custom' ? customDate : undefined,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        searchQuery: searchQuery.trim() || undefined,
+        location_slug: locationFilter,
+        date: dateFilter,
+        status: statusFilter,
+        searchQuery: searchFilter,
       };
 
       const data = await fetchReservations(filter);
+      if (requestId !== requestIdRef.current) return; // wycofane zapytanie
       setReservations(data);
 
-      if (onReservationsLoaded) {
-        const total = data.length;
-        const pending = data.filter((r) => r.status === 'pending').length;
-        const confirmed = data.filter((r) => r.status === 'confirmed').length;
-        const cancelled = data.filter((r) => r.status === 'cancelled').length;
-        onReservationsLoaded({ total, pending, confirmed, cancelled });
+      const statsCallback = onReservationsLoadedRef.current;
+      if (statsCallback) {
+        statsCallback({
+          total: data.length,
+          pending: data.filter((r) => r.status === 'pending').length,
+          confirmed: data.filter((r) => r.status === 'confirmed').length,
+          cancelled: data.filter((r) => r.status === 'cancelled').length,
+        });
       }
     } catch (err: any) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error loading reception reservations:', err);
       setLoadError(err?.message || 'Nie udało się wczytać rezerwacji z bazy danych.');
     } finally {
-      setIsLoading(false);
+      // Spinner zdejmuje wyłącznie zapytanie, które jest nadal aktualne.
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [locationFilter, dateFilter, statusFilter, searchFilter]);
+
+  useEffect(() => {
+    if (location) {
+      void loadReservations();
+    }
+  }, [location, loadReservations]);
 
   const handleStatusUpdate = async (id: string, newStatus: ReservationStatus) => {
     try {
