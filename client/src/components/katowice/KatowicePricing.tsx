@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star } from 'lucide-react';
-import { KATOWICE_PRICING, type PricingCategoryData } from '../../data/pricingData';
+import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star, Loader2 } from 'lucide-react';
+import type { LocationPricing as LocationPricingType, PricingCategoryData } from '../../data/pricingData';
+import { loadLocationPricing, subscribeToPricing, startPricingRealtime } from '../../lib/supabase/pricingService';
 
 interface KatowicePricingProps {
   onOpenBooking?: (location?: string, resourceType?: 'bowling' | 'billiards') => void;
@@ -10,13 +11,71 @@ interface KatowicePricingProps {
 export default function KatowicePricing({ onOpenBooking }: KatowicePricingProps) {
   const [activeTab, setActiveTab] = useState<'bowling' | 'billiards'>('bowling');
 
-  const activeCategory: PricingCategoryData = KATOWICE_PRICING.categories[activeTab];
+  // Stawki pochodzą WYŁĄCZNIE z tabeli `pricing_tariffs`.
+  const [pricing, setPricing] = useState<LocationPricingType | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    startPricingRealtime();
+
+    loadLocationPricing('katowice')
+      .then((data) => {
+        if (cancelled) return;
+        setPricing(data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('[KatowicePricing] Nie udało się wczytać cennika:', error);
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Realtime: zmiana ceny w panelu admina odświeża ten widok natychmiast.
+  useEffect(
+    () =>
+      subscribeToPricing((map) => {
+        setPricing(map.katowice);
+        setIsLoading(false);
+      }),
+    []
+  );
+
+  const activeCategory: PricingCategoryData | undefined = pricing?.categories[activeTab];
 
   const handleBooking = () => {
     if (onOpenBooking) {
       onOpenBooking('katowice', activeTab);
     }
   };
+
+  if (isLoading && !activeCategory) {
+    return (
+      <section className="flex items-center justify-center gap-3 py-16 text-slate-400 text-sm">
+        <Loader2 className="w-5 h-5 animate-spin text-orange-400" />
+        Wczytywanie aktualnych cen z bazy danych...
+      </section>
+    );
+  }
+
+  if (!activeCategory) {
+    return (
+      <section className="py-10 text-left">
+        <div className="p-6 rounded-3xl bg-red-950/40 border border-red-500/30 text-red-200 text-sm">
+          <h3 className="font-black uppercase text-red-300 mb-2">Cennik chwilowo niedostępny</h3>
+          <p>
+            Brak stawek dla Katowic w bazie danych. Uruchom skrypt create_pricing_tariffs.sql
+            albo dodaj taryfy w panelu &quot;Ceny i Taryfy&quot;.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-8 text-left relative">

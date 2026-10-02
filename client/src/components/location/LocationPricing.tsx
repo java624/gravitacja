@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star, Target, Phone, Mic2 } from 'lucide-react';
-import { PRICING_DATA, type LocationPricing as LocationPricingType, type PricingCategoryData } from '../../data/pricingData';
+import { Trophy, Gamepad2, Clock, Sparkles, ArrowUpRight, Info, Star, Target, Phone, Mic2, Loader2 } from 'lucide-react';
+import type { LocationPricing as LocationPricingType, PricingCategoryData } from '../../data/pricingData';
 import { useLocationContext, type LocationSlug } from '../../context/LocationContext';
+import { loadLocationPricing, subscribeToPricing, startPricingRealtime } from '../../lib/supabase/pricingService';
 
 interface LocationPricingProps {
   locationSlug?: LocationSlug;
@@ -11,11 +12,53 @@ interface LocationPricingProps {
 export default function LocationPricing({ locationSlug }: LocationPricingProps) {
   const { activeSlug, activeLocation, openBooking } = useLocationContext();
   const slug = locationSlug || activeSlug || 'katowice';
-  const pricingData: LocationPricingType = PRICING_DATA[slug] || PRICING_DATA.katowice;
+
+  // Ceny pochodzą WYŁĄCZNIE z tabeli `pricing_tariffs` (patrz pricingService).
+  const [pricingData, setPricingData] = useState<LocationPricingType | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'bowling' | 'billiards' | 'dart' | 'karaoke'>('bowling');
-  const hasDart = Boolean(pricingData.categories.dart);
-  const hasKaraoke = Boolean(pricingData.categories.karaoke);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setLoadError(null);
+
+    startPricingRealtime();
+
+    loadLocationPricing(slug)
+      .then((data) => {
+        if (cancelled) return;
+        setPricingData(data);
+        setIsLoading(false);
+        if (!data) {
+          setLoadError('Brak taryf dla tej lokalizacji w bazie danych.');
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setIsLoading(false);
+        setLoadError(
+          err instanceof Error ? err.message : 'Nie udało się pobrać cennika z bazy danych.'
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  // Realtime: zmiana stawki w panelu admina ma natychmiast odświeżyć cennik.
+  useEffect(() => {
+    return subscribeToPricing((map) => {
+      setPricingData(map[slug]);
+      setIsLoading(false);
+    });
+  }, [slug]);
+
+  const hasDart = Boolean(pricingData?.categories.dart);
+  const hasKaraoke = Boolean(pricingData?.categories.karaoke);
   // Optional categories are only present on one location (dart → Jaworzno,
   // karaoke → Poznań), so selectors that refer to them fall back to bowling
   // safely whenever they are absent.
@@ -23,13 +66,36 @@ export default function LocationPricing({ locationSlug }: LocationPricingProps) 
     (activeTab === 'dart' && !hasDart) || (activeTab === 'karaoke' && !hasKaraoke)
       ? 'bowling'
       : activeTab;
-  const activeCategory: PricingCategoryData =
-    pricingData.categories[effectiveTab] || pricingData.categories.bowling;
+  const activeCategory: PricingCategoryData | undefined =
+    pricingData?.categories[effectiveTab] ?? pricingData?.categories.bowling;
 
   const handleBooking = () => {
     if (effectiveTab === 'dart' || effectiveTab === 'karaoke') return;
     openBooking(slug, effectiveTab);
   };
+
+  if (isLoading && !pricingData) {
+    return (
+      <section id="cennik" className="flex items-center justify-center gap-3 py-16 text-slate-400 text-sm">
+        <Loader2 className="w-5 h-5 animate-spin text-orange-400" />
+        Wczytywanie aktualnych cen z bazy danych...
+      </section>
+    );
+  }
+
+  if (!pricingData || !activeCategory) {
+    return (
+      <section id="cennik" className="py-10 text-left">
+        <div className="p-6 rounded-3xl bg-red-950/40 border border-red-500/30 text-red-200 text-sm space-y-2">
+          <h3 className="font-black uppercase text-red-300">Cennik chwilowo niedostępny</h3>
+          <p>
+            {loadError ??
+              'Brak stawek dla tej lokalizacji. Uzupełnij tabelę pricing_tariffs (skrypt create_pricing_tariffs.sql) lub dodaj taryfy w panelu "Ceny i Taryfy".'}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="cennik" className="space-y-8 text-left relative scroll-mt-28">

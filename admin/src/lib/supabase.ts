@@ -22,3 +22,22 @@ export {
   fetchBirthdayInquiries,
   updateBirthdayInquiryStatus,
 } from './supabase/birthdayInquiriesService';
+export {
+  PRICING_TABLE,
+  fetchPricingTariffs,
+  upsertPricingTariffs,
+  buildPricingMap,
+  loadPricing,
+  loadLocationPricing,
+  peekLocationPricing,
+  getCachedPricing,
+  subscribeToPricing,
+  setPricingCache,
+  invalidatePricingCache,
+  startPricingRealtime,
+  isLocationPricingLoaded,
+  loadedPricingLocations,
+  loadedResourceTypes,
+  emptyPricingCategory,
+} from './supabase/pricingService';
+export type { PricingTariffInput, PricingTariffRow } from './supabase/pricingService';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Sparkles, Clock, Calendar } from 'lucide-react';
+import { Tag, Sparkles, Clock, Calendar, Loader2 } from 'lucide-react';
 import type { PriceBreakdownResult } from '../../services/booking/pricingCalculator';
 
 interface PriceBreakdownSummaryProps {
@@ -11,6 +11,23 @@ export const PriceBreakdownSummary: React.FC<PriceBreakdownSummaryProps> = ({
   breakdown,
   compact = false,
 }) => {
+  // Stawki wczytujemy z `pricing_tariffs`. Dopóki ich nie ma, NIE pokazujemy
+  // "0 PLN" - klient musi wiedzieć, że wycena się jeszcze liczy.
+  if (!breakdown.hasTariffs) {
+    return (
+      <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 backdrop-blur-xl shadow-lg space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-white">
+          <Tag className="w-4 h-4 text-amber-400" />
+          Podsumowanie i Kalkulacja Ceny
+        </div>
+        <div className="flex items-center gap-2 text-xs text-amber-300">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Pobieramy aktualne stawki z bazy danych…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 backdrop-blur-xl shadow-lg space-y-3">
       {/* Header */}

@@ -5,7 +5,7 @@ import type { LocationSlug } from '../../../types/booking';
 import { OwnerHeader } from './OwnerHeader';
 import { OwnerGlobalStats } from './OwnerGlobalStats';
 import { OwnerSecurityManager } from './OwnerSecurityManager';
-import { OwnerPricingManager } from './OwnerPricingManager';
+import { AdminPricingManager } from './AdminPricingManager';
 import AdminMenuManager from '../AdminMenuManager';
 import CorporateInquiriesTable from '../CorporateInquiriesTable';
 import KidsBirthdaysTable from '../KidsBirthdaysTable';
@@ -146,7 +146,7 @@ export const OwnerDashboard: React.FC = () => {
       ) : activeTab === 'birthdays' ? (
         <KidsBirthdaysTable />
       ) : activeTab === 'pricing' ? (
-        <OwnerPricingManager />
+        <AdminPricingManager />
       ) : (
         <OwnerSecurityManager />
       )}

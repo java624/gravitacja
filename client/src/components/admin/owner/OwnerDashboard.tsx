@@ -6,7 +6,7 @@ import { fetchReservations, updateReservationStatus, deleteReservation, isSupaba
 import { OwnerHeader } from './OwnerHeader';
 import { OwnerGlobalStats } from './OwnerGlobalStats';
 import { OwnerSecurityManager } from './OwnerSecurityManager';
-import { OwnerPricingManager } from './OwnerPricingManager';
+import { AdminPricingManager } from './AdminPricingManager';
 import AdminFilterBar from '../AdminFilterBar';
 import ReservationTable from '../ReservationTable';
 import AdminMenuManager from '../AdminMenuManager';
@@ -250,7 +250,7 @@ export const OwnerDashboard: React.FC = () => {
       ) : activeTab === 'birthdays' ? (
         <KidsBirthdaysTable />
       ) : activeTab === 'pricing' ? (
-        <OwnerPricingManager />
+        <AdminPricingManager />
       ) : (
         <OwnerSecurityManager />
       )}
