@@ -23,6 +23,19 @@ import Logo from '../ui/Logo';
 /** Anchor id of the city picker section on the landing page. */
 const CITY_PICKER_ANCHOR = 'wybierz-lokal';
 
+/* ===== Landing page ONLY: segmented city switcher =====
+   Wspólne klasy trzymane w jednym miejscu, żeby kapsuła i jej przyciski
+   były wizualnie spójne. Wariant aktywny = pomarańczowa "tabletka",
+   wariant domyślny powtarza ten sam gradient pod hoverem (Tailwind
+   `hover:from-*` / `hover:to-*`), dzięki czemu kliknięty punkt wygląda
+   dokładnie tak samo jak najechany. */
+const CITY_SWITCH_BASE =
+  'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer';
+const CITY_SWITCH_ACTIVE =
+  'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 scale-[1.02]';
+const CITY_SWITCH_IDLE =
+  'text-slate-300 hover:text-white hover:bg-gradient-to-r hover:from-orange-500 hover:to-amber-500 hover:shadow-md hover:shadow-orange-500/25 hover:scale-[1.02]';
+
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -129,14 +142,18 @@ export default function Header() {
     { label: 'Kontakt', path: `/${currentCitySlug}/kontakt`, icon: Mail },
   ] : [];
 
-  /** City pickers — center of the header on the landing page. */
+  /** City pickers — center of the header on the landing page (segmented switcher). */
   const landingNavItems = LOCATIONS_DATA.map((loc) => ({
     label: loc.name.toUpperCase(),
     path: `/${loc.id}`,
+    slug: loc.id,
     icon: MapPin,
   }));
 
-  const navItems = currentCitySlug ? cityNavItems : landingNavItems;
+  // Uwaga: `navItems` obsługuje WYŁĄCZNIE strony konkretnych miast.
+  // Na stronie głównej środek headera zajmuje przełącznik miast
+  // (`landingNavItems`), więc `navItems` celowo nie zawiera miast.
+  const navItems = cityNavItems;
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-500 ${isScrolled ? 'py-1.5 sm:py-2' : 'py-2.5 sm:py-4'}`}>
@@ -207,6 +224,36 @@ export default function Header() {
               na logo i CTA: przy zbyt wąskim oknie nadmiar zostanie ucięty
               wewnątrz tego bloku, a nie wjedzie na sąsiednie elementy. */}
           <div className="relative z-10 flex-1 min-w-0 mx-2 hidden xl:flex items-center justify-center overflow-hidden">
+            {isLandingPage ? (
+            /* ===== LANDING PAGE: premium segmented city switcher ===== */
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              role="group"
+              aria-label="Wybierz miasto"
+              className="flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md border border-white/10 p-1.5 rounded-full shadow-inner"
+            >
+              {landingNavItems.map((item) => {
+                // Na stronie głównej żadne miasto nie jest "bieżącą" trasą,
+                // więc aktywnym punktem jest miasto ustawione w kontekście.
+                const isActive = activeSlug === item.slug;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => handleSelectCity(item.slug as LocationSlug)}
+                    aria-current={isActive ? 'true' : undefined}
+                    className={`${CITY_SWITCH_BASE} ${isActive ? CITY_SWITCH_ACTIVE : CITY_SWITCH_IDLE}`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2.4} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </motion.div>
+          ) : (
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -241,6 +288,7 @@ export default function Header() {
                 );
               })}
             </motion.nav>
+          )}
           </div>
 
           {/* RIGHT: tylko akcentny CTA (telefon -> klikalna karta TELEFON
@@ -284,8 +332,10 @@ export default function Header() {
                   </span>
                 </div>
 
+                {/* Mobile/tablet: na stronie głównej to lista miast,
+                    na stronie lokalu — 9 sekcji tego lokalu. */}
                 <div className="grid grid-cols-2 gap-1.5 py-1">
-                  {navItems.map((item) => {
+                  {(isLandingPage ? landingNavItems : navItems).map((item) => {
                     const isActive = location.pathname === item.path;
                     const Icon = item.icon;
                     return (
