@@ -10,15 +10,18 @@ export class PaymentsService {
   constructor() {
     const secretKey = process.env.STRIPE_SECRET_KEY || '';
 
-    this.stripe = new Stripe(secretKey, {
-      apiVersion: '2025-02-24.acacia' as any,
-    });
-    if (secretKey) {
-      this.logger.log('Stripe initialized with STRIPE_SECRET_KEY from environment');
+    if (!secretKey) {
+      this.logger.error('STRIPE_SECRET_KEY is not defined! Payment endpoints will return errors.');
+      // Initialize with dummy key - will fail on actual API calls with clear error
+      this.stripe = new Stripe('sk_test_missing_configure_env', {
+        apiVersion: '2025-02-24.acacia' as any,
+      });
     } else {
-      this.logger.warn('STRIPE_SECRET_KEY is not defined in environment variables');
+      this.stripe = new Stripe(secretKey, {
+        apiVersion: '2025-02-24.acacia' as any,
+      });
+      this.logger.log('Stripe initialized with STRIPE_SECRET_KEY from environment');
     }
-
   }
 
   getConfig() {

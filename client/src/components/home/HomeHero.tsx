@@ -46,12 +46,24 @@ export default function HomeHero() {
     }, 2600);
   };
 
+  // Trójkąt k(e)gli w głębi toru. `scale` rośnie wraz ze zbliżaniem do
+  // rzucającego: rząd 0 (4 k(e)gle) jest najdalszy i najmniejszy, a rząd 3
+  // (k(e)gła główka) najbliższy i największy — dzięki temu trójkąt czyta się
+  // jako perspektywa, a nie płaska piramida. Skalę wplatamy w ROZMIAR
+  // pinów, a nie w `transform`, bo sam transform nie kurczy układu flex —
+  // odstępy zostałyby szerokie i trójkąt znów byłby rozciągnięty.
   const pinRows = [
-    { count: 4, rowIdx: 0 },
-    { count: 3, rowIdx: 1 },
-    { count: 2, rowIdx: 2 },
-    { count: 1, rowIdx: 3 },
+    { count: 4, rowIdx: 0, scale: 0.72 },
+    { count: 3, rowIdx: 1, scale: 0.8 },
+    { count: 2, rowIdx: 2, scale: 0.88 },
+    { count: 1, rowIdx: 3, scale: 0.96 },
   ];
+
+  // Rozmiary bazowe k(e)gli oraz odstępy skalują się wraz z perspektywą.
+  const pinW = isMobile ? 20 : 28;
+  const pinH = isMobile ? 48 : 68;
+  const pinGap = isMobile ? 8 : 14;
+  const rowGap = isMobile ? 1.5 : 4;
 
   return (
     <section className="relative text-center max-w-6xl mx-auto flex flex-col justify-center items-center py-6 sm:py-10 px-2 sm:px-6 select-none overflow-hidden">
@@ -209,20 +221,36 @@ export default function HomeHero() {
         {/* ============================================================== */}
         {/* TOP PIN DECK (10 PINS AT THE FAR END)                          */}
         {/* ============================================================== */}
-        <div className="relative z-10 w-full flex flex-col items-center justify-center pt-2">
+        <div className="relative z-10 w-full flex flex-col items-center justify-center pt-8 sm:pt-10">
           
           {/* Spotlight Backlight Glow under Pins */}
           <div className="absolute top-0 w-56 sm:w-80 h-24 rounded-full bg-gradient-to-r from-purple-500/30 via-pink-500/40 to-cyan-500/30 blur-xl pointer-events-none" />
 
-          {/* 10 Pins Layout Pyramid (4-3-2-1) */}
-          <div className="relative flex flex-col items-center gap-1.5 sm:gap-2 pt-2">
+          {/* 10 Pins Layout Pyramid (4-3-2-1) — rows get closer together
+              and bigger as they approach the bowler (perspective). */}
+          <div
+            className="relative flex flex-col items-center"
+            style={{ gap: `${rowGap}px` }}
+          >
             {pinRows.map((row) => (
-              <div key={row.rowIdx} className="flex items-center justify-center gap-2 sm:gap-3.5">
+              <div
+                key={row.rowIdx}
+                className="flex items-center justify-center"
+                style={{ gap: `${pinGap * row.scale}px` }}
+              >
                 {[...Array(row.count)].map((_, pIdx) => {
                   const globalIdx = row.rowIdx * 3 + pIdx;
+                  // Depth scaling is baked into the pin dimensions so the
+                  // flex layout shrinks with the pins (no stray gaps).
+                  const pinWidth = pinW * row.scale;
+                  const pinHeight = pinH * row.scale;
                   return (
                     <motion.div
                       key={pIdx}
+                      // `relative` anchors the contact shadow to each pin;
+                      // `isolate` keeps that shadow's stacking local so it
+                      // can never slip under the lane floor.
+                      className="relative isolate"
                       animate={
                         hasHitPins
                           ? {
@@ -240,9 +268,19 @@ export default function HomeHero() {
                           : { repeat: Infinity, duration: 2.5 + globalIdx * 0.2 }
                       }
                     >
+                      {/* Soft elliptical contact shadow — glues the pin to the deck */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-1/2 -translate-x-1/2 rounded-[50%] blur-[3px] bg-cyan-300/35 pointer-events-none"
+                        style={{
+                          width: `${pinWidth * 0.95}px`,
+                          height: `${pinHeight * 0.09}px`,
+                          bottom: `-${pinHeight * 0.015}px`,
+                        }}
+                      />
                       <BowlingPin
-                        width={isMobile ? 20 : 28}
-                        height={isMobile ? 48 : 68}
+                        width={pinWidth}
+                        height={pinHeight}
                         glowColor={globalIdx % 2 === 0 ? 'cyan' : 'pink'}
                         showCrown={row.rowIdx === 3}
                       />
@@ -252,6 +290,18 @@ export default function HomeHero() {
               </div>
             ))}
           </div>
+
+          {/* Pin deck platform — a dark, softly glowing slab directly under the
+              triangle. It gives the pins a surface to stand on and visually
+              seats the deck at the far (narrow) end of the trapezoid lane. */}
+          <div
+            aria-hidden="true"
+            className="relative -mt-1 h-2 w-40 sm:w-52 rounded-[50%] bg-cyan-400/10 blur-[2px]"
+          />
+          <div
+            aria-hidden="true"
+            className="relative -mt-1.5 h-px w-36 sm:w-48 bg-gradient-to-r from-transparent via-cyan-300/45 to-transparent"
+          />
 
           <span className="mt-3 text-[9px] font-black tracking-widest text-cyan-300 uppercase px-3 py-1 rounded-full bg-slate-950/80 border border-cyan-400/30 backdrop-blur-md shadow-[0_0_12px_rgba(6,182,212,0.3)]">
             10 PINS UV STRIKE DECK

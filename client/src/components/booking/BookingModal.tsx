@@ -140,23 +140,32 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
 
       // 2. If online payment (Stripe Checkout)
       if (paymentMethod !== 'reception') {
-        const session = await createStripeCheckoutSession({
-          resourceId: selectedResourceId,
-          resourceName,
-          locationSlug: selectedLocation,
-          clientName: clientName.trim(),
-          clientPhone: clientPhone.trim(),
-          clientEmail: clientEmail.trim(),
-          date,
-          startTime,
-          endTime,
-          guestsCount,
-          totalPrice: priceBreakdown.totalPrice,
-          includeShoes,
-          paymentMethod,
-          successUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?session_id={CHECKOUT_SESSION_ID}&booking_success=true`,
-          cancelUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?booking_cancelled=true`,
-        });
+        let session;
+        try {
+          session = await createStripeCheckoutSession({
+            resourceId: selectedResourceId,
+            resourceName,
+            locationSlug: selectedLocation,
+            clientName: clientName.trim(),
+            clientPhone: clientPhone.trim(),
+            clientEmail: clientEmail.trim(),
+            date,
+            startTime,
+            endTime,
+            guestsCount,
+            totalPrice: priceBreakdown.totalPrice,
+            includeShoes,
+            paymentMethod,
+            successUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?session_id={CHECKOUT_SESSION_ID}&booking_success=true`,
+            cancelUrl: `${window.location.origin}/${selectedLocation}/rezerwacje?booking_cancelled=true`,
+          });
+        } catch (stripeErr: any) {
+          // Network error = backend not running
+          if (stripeErr?.message?.includes('Failed to fetch') || stripeErr?.message?.includes('NetworkError') || stripeErr?.name === 'TypeError') {
+            throw new Error('Nie można połączyć się z serwerem płatności. Sprawdź czy backend NestJS jest uruchomiony (npm run start:dev w folderze server).');
+          }
+          throw stripeErr;
+        }
 
         if (session && session.url) {
           window.location.href = session.url;
