@@ -40,10 +40,19 @@ export default function PoznanPage() {
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Strefa Rozrywki</span>
                 <span className="text-base sm:text-lg font-black text-white">{poznan.zones}</span>
               </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md col-span-2 sm:col-span-1">
-                <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Telefon</span>
-                <span className="text-xs sm:text-sm font-black text-purple-400">{poznan.phone}</span>
-              </div>
+              <a
+              href={`tel:${poznan.phoneClean}`}
+              aria-label={`Zadzwoń do Grawitacji Poznań: ${poznan.phone}`}
+              className="col-span-2 sm:col-span-1 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-purple-500/50 hover:bg-purple-500/10 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <Phone className="w-3.5 h-3.5 text-purple-400" strokeWidth={2.4} />
+                Telefon
+              </span>
+              <span className="block text-xs sm:text-sm font-black text-purple-400 hover:text-purple-300 transition-colors">
+                {poznan.phone}
+              </span>
+            </a>
             </div>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4">

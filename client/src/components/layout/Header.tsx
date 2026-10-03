@@ -211,10 +211,10 @@ export default function Header() {
               aria-label="Nawigacja główna"
               // BEZ `overflow-x-auto`: pasek przewijania pod nawigacją był
               // główną przyczyną "uciętego" menu na węższych ekranach.
-              // Nawigacja ma zmieścić się w jednym rzędzie - stąd twarde
-              // `whitespace-nowrap` + `shrink-0` na przyciskach i małe
-              // odstępy (gap-2 / xl:gap-3).
-              className="flex items-center gap-2 xl:gap-3 bg-black/40 px-2 py-1.5 rounded-2xl border border-white/10 backdrop-blur-xl shadow-inner max-w-full"
+              // Nawigacja mieści się w jednym rzędzie dzięki twardemu
+              // `whitespace-nowrap` + `shrink-0` na przyciskach oraz
+              // luźniejszym `gap-2.5 / xl:gap-3.5` między punktami.
+              className="flex items-center gap-2.5 xl:gap-3.5 bg-black/40 px-2 py-1.5 rounded-2xl border border-white/10 backdrop-blur-xl shadow-inner max-w-full"
             >
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -226,26 +226,22 @@ export default function Header() {
                       closeOverlays();
                       navigate(item.path);
                     }}
-                    className={`relative shrink-0 px-1.5 py-2 rounded-xl text-xs font-medium tracking-wider whitespace-nowrap transition-all duration-300 uppercase cursor-pointer ${
-                      isActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`relative shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-bold tracking-wide uppercase whitespace-nowrap transition-colors duration-300 cursor-pointer ${
+                      isActive
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
+                        : 'text-slate-200 hover:text-white'
                     }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500 via-red-600 to-orange-600 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      />
-                    )}
-                    <span className="relative z-10 drop-shadow-md">{item.label}</span>
+                    {item.label}
                   </button>
                 );
               })}
             </motion.nav>
           </div>
 
-          {/* RIGHT: tylko akcentny CTA (telefon -> Phone Island w hero,
-              social -> Footer, więc pasek zostaje minimalistyczny) */}
+          {/* RIGHT: tylko akcentny CTA (telefon -> klikalna karta TELEFON
+              w Hero, social -> Footer, więc pasek zostaje minimalistyczny) */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-3 shrink-0 ml-auto xl:ml-0">
             <motion.button
               whileHover={{ scale: 1.05 }}

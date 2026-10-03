@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowUpRight, MapPin, Clock, Tag } from 'lucide-react';
+import { Sparkles, ArrowUpRight, MapPin, Clock, Tag, Phone } from 'lucide-react';
 import { LOCATIONS_DATA } from '../data/locationsData';
 import { PROMOTIONS_DATA } from '../data/promotionsData';
 import { useLocationContext, type LocationSlug } from '../context/LocationContext';
 import LocationQuickGrid from '../components/location/LocationQuickGrid';
 import LocationFeatures from '../components/location/LocationFeatures';
 import PromotionCard from '../components/katowice/PromotionCard';
-import PhoneIsland from '../components/ui/PhoneIsland';
 import LaneDivider from '../components/ui/LaneDivider';
 
 export default function LocationPage() {
@@ -64,10 +63,19 @@ export default function LocationPage() {
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Strefa Rozrywki</span>
                 <span className="text-base sm:text-lg font-black text-white">{location.zones}</span>
               </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md col-span-2 sm:col-span-1">
-                <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Telefon</span>
-                <span className="text-xs sm:text-sm font-black text-orange-400">{location.phone}</span>
-              </div>
+              <a
+                href={`tel:${location.phoneClean}`}
+                aria-label={`Zadzwoń do Grawitacji ${location.name}: ${location.phone}`}
+                className="col-span-2 sm:col-span-1 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:border-orange-500/50 hover:bg-orange-500/10 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  <Phone className="w-3.5 h-3.5 text-orange-400" strokeWidth={2.4} />
+                  Telefon
+                </span>
+                <span className="block text-xs sm:text-sm font-black text-orange-400 hover:text-orange-300 transition-colors">
+                  {location.phone}
+                </span>
+              </a>
             </div>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-3 sm:pt-4">
@@ -88,11 +96,7 @@ export default function LocationPage() {
               </button>
             </div>
 
-            {/* Phone Island - wypadło z Headera, żeby pasek pozostał minimalistyczny */}
-            <div className="pt-1 sm:pt-2">
-              <PhoneIsland locationSlug={validSlug} />
             </div>
-          </div>
 
           {/* Right Column: Address & Hours */}
           <div className="lg:col-span-5">
@@ -162,6 +166,20 @@ export default function LocationPage() {
           </section>
         </>
       )}
+
+      {/* Szybki dostęp do telefonu na mobile - tylko do `sm` (`sm:hidden`),
+          bo desktop ma klikalną kartę TELEFON w Hero. */}
+      <a
+        href={`tel:${location.phoneClean}`}
+        aria-label={`Zadzwoń do Grawitacji ${location.name}: ${location.phone}`}
+        title={`Zadzwoń do Grawitacji ${location.name}`}
+        className="sm:hidden fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-orange-500 text-white px-4 py-3 rounded-full shadow-lg shadow-orange-500/40 border border-orange-400/30 active:scale-95 transition-transform cursor-pointer no-underline"
+      >
+        <Phone className="w-[18px] h-[18px] shrink-0" strokeWidth={2.4} />
+        <span className="text-[11px] font-black tracking-wide uppercase whitespace-nowrap">
+          {location.phone}
+        </span>
+      </a>
     </div>
   );
 }
