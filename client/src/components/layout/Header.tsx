@@ -202,8 +202,11 @@ export default function Header() {
               </AnimatePresence>
             </div>
           </div>
-{/* CENTER: city pickers (landing) or venue sections (location pages) */}
-          <div className="relative z-10 flex-1 min-w-0 hidden xl:flex items-center justify-center">
+{/* CENTER: city pickers (landing) or venue sections (location pages).
+              `mx-2` + `overflow-hidden` to twarda ochrona przed nachodzeniem
+              na logo i CTA: przy zbyt wąskim oknie nadmiar zostanie ucięty
+              wewnątrz tego bloku, a nie wjedzie na sąsiednie elementy. */}
+          <div className="relative z-10 flex-1 min-w-0 mx-2 hidden xl:flex items-center justify-center overflow-hidden">
             <motion.nav
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -211,10 +214,10 @@ export default function Header() {
               aria-label="Nawigacja główna"
               // BEZ `overflow-x-auto`: pasek przewijania pod nawigacją był
               // główną przyczyną "uciętego" menu na węższych ekranach.
-              // Nawigacja mieści się w jednym rzędzie dzięki twardemu
-              // `whitespace-nowrap` + `shrink-0` na przyciskach oraz
-              // luźniejszym `gap-2.5 / xl:gap-3.5` między punktami.
-              className="flex items-center gap-2.5 xl:gap-3.5 bg-black/40 px-2 py-1.5 rounded-2xl border border-white/10 backdrop-blur-xl shadow-inner max-w-full"
+              // Nawigacja mieści się w jednym rzędzie obok logo i CTA,
+              // więc 9 punktów na stronie lokalu trzymamy zwarte:
+              // `gap-1` (na `2xl` luzujemy do `gap-2`).
+              className="flex items-center gap-1 2xl:gap-2 bg-black/40 px-2 py-1 rounded-2xl border border-white/10 backdrop-blur-xl shadow-inner max-w-full"
             >
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -227,10 +230,10 @@ export default function Header() {
                       navigate(item.path);
                     }}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`relative shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-bold tracking-wide uppercase whitespace-nowrap transition-colors duration-300 cursor-pointer ${
+                    className={`relative shrink-0 rounded-full text-[11.5px] font-bold tracking-wider uppercase whitespace-nowrap transition-colors duration-300 cursor-pointer ${
                       isActive
-                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
-                        : 'text-slate-200 hover:text-white'
+                        ? 'px-2.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
+                        : 'px-2 py-1 text-slate-200 hover:text-white'
                     }`}
                   >
                     {item.label}
