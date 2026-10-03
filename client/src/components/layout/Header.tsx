@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   Menu,
   X,
@@ -23,18 +23,30 @@ import Logo from '../ui/Logo';
 /** Anchor id of the city picker section on the landing page. */
 const CITY_PICKER_ANCHOR = 'wybierz-lokal';
 
-/* ===== Landing page ONLY: segmented city switcher =====
-   Wspólne klasy trzymane w jednym miejscu, żeby kapsuła i jej przyciski
-   były wizualnie spójne. Wariant aktywny = pomarańczowa "tabletka",
-   wariant domyślny powtarza ten sam gradient pod hoverem (Tailwind
-   `hover:from-*` / `hover:to-*`), dzięki czemu kliknięty punkt wygląda
-   dokładnie tak samo jak najechany. */
+/* ===== Sliding pill (shared element) =====
+   `layoutId` jest WSPÓLNE dla każdej grupy przycisków: framer-motion
+   przenosi ten sam element DOM między kolejnymi aktywnymi punktami,
+   zamiast robić "disappear + appear". Dlatego każda grupa ma WŁASNY
+   `layoutId` — `activeCityPill` (przełącznik miast), `activeNavPill`
+   (menu lokalu), `activeMobilePill` (szuflada). Wspólny ID między
+   nimi spowodowałby duplikaty: nawigacja desktopowa siedzi w kontenerze
+   `hidden xl:flex`, więc jest w DOM również na mobile, gdzie równocześnie
+   renderuje się szuflada.
+
+   Uwaga: skoro transformacjami (skalą) zarządza motion, w KLASACH CSS nie
+   ma `scale-*` — inaczej `whileHover` i klasa walczyłyby o ten sam
+   `transform`. Wielkość aktywnej tabletki realizuje `animate`. */
 const CITY_SWITCH_BASE =
-  'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer';
-const CITY_SWITCH_ACTIVE =
-  'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 scale-[1.02]';
-const CITY_SWITCH_IDLE =
-  'text-slate-300 hover:text-white hover:bg-gradient-to-r hover:from-orange-500 hover:to-amber-500 hover:shadow-md hover:shadow-orange-500/25 hover:scale-[1.02]';
+  'relative flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors duration-200 cursor-pointer';
+const CITY_SWITCH_ACTIVE = 'text-white';
+const CITY_SWITCH_IDLE = 'text-slate-300 hover:text-white hover:bg-white/10';
+
+/** Wspólna warstwa "podkładki" — gradient, poświata i zaokrąglenie. */
+const ACTIVE_PILL_CLASS =
+  'absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/30 pointer-events-none';
+
+/** Sprężyna przesuwania tabletki. */
+const PILL_SPRING = { type: 'spring', stiffness: 400, damping: 32 } as const;
 
 export default function Header() {
   const navigate = useNavigate();
@@ -223,6 +235,7 @@ export default function Header() {
               `mx-2` + `overflow-hidden` to twarda ochrona przed nachodzeniem
               na logo i CTA: przy zbyt wąskim oknie nadmiar zostanie ucięty
               wewnątrz tego bloku, a nie wjedzie na sąsiednie elementy. */}
+          <LayoutGroup id="headerNavigation">
           <div className="relative z-10 flex-1 min-w-0 mx-2 hidden xl:flex items-center justify-center overflow-hidden">
             {isLandingPage ? (
             /* ===== LANDING PAGE: premium segmented city switcher ===== */
@@ -240,16 +253,29 @@ export default function Header() {
                 const isActive = activeSlug === item.slug;
                 const Icon = item.icon;
                 return (
-                  <button
+                  <motion.button
                     key={item.path}
                     type="button"
                     onClick={() => handleSelectCity(item.slug as LocationSlug)}
                     aria-current={isActive ? 'true' : undefined}
+                    animate={{ scale: isActive ? 1.02 : 1 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
                     className={`${CITY_SWITCH_BASE} ${isActive ? CITY_SWITCH_ACTIVE : CITY_SWITCH_IDLE}`}
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2.4} />
-                    <span>{item.label}</span>
-                  </button>
+                    {/* Sliding pill — layoutId przenosi go na kolejny aktywny punkt. */}
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeCityPill"
+                        className={ACTIVE_PILL_CLASS}
+                        transition={PILL_SPRING}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <Icon className="relative z-10 w-3.5 h-3.5 shrink-0" strokeWidth={2.4} />
+                    <span className="relative z-10">{item.label}</span>
+                  </motion.button>
                 );
               })}
             </motion.div>
@@ -269,7 +295,7 @@ export default function Header() {
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <button
+                  <motion.button
                     key={item.path}
                     onClick={() => {
                       if (item.path === '/') setActiveSlug(null);
@@ -277,19 +303,31 @@ export default function Header() {
                       navigate(item.path);
                     }}
                     aria-current={isActive ? 'page' : undefined}
+                    animate={{ scale: isActive ? 1.02 : 1 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
                     className={`relative shrink-0 rounded-full text-[11.5px] font-bold tracking-wider uppercase whitespace-nowrap transition-colors duration-300 cursor-pointer ${
-                      isActive
-                        ? 'px-2.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
-                        : 'px-2 py-1 text-slate-200 hover:text-white'
+                      isActive ? 'px-2.5 py-1 text-white' : 'px-2 py-1 text-slate-200 hover:text-white'
                     }`}
                   >
-                    {item.label}
-                  </button>
+                    {/* Sliding pill — osobny layoutId, bo to inna grupa niż przełącznik miast. */}
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeNavPill"
+                        className={ACTIVE_PILL_CLASS}
+                        transition={PILL_SPRING}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className="relative z-10">{item.label}</span>
+                  </motion.button>
                 );
               })}
             </motion.nav>
           )}
           </div>
+          </LayoutGroup>
 
           {/* RIGHT: tylko akcentny CTA (telefon -> klikalna karta TELEFON
               w Hero, social -> Footer, więc pasek zostaje minimalistyczny) */}
@@ -339,22 +377,32 @@ export default function Header() {
                     const isActive = location.pathname === item.path;
                     const Icon = item.icon;
                     return (
-                      <button
+                      <motion.button
                         key={item.path}
                         onClick={() => {
                           if (item.path === '/') setActiveSlug(null);
                           closeOverlays();
                           navigate(item.path);
                         }}
-                        className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer ${
-                          isActive
-                            ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]'
-                            : 'text-slate-300 hover:text-white hover:bg-white/5'
+                        animate={{ scale: isActive ? 1.02 : 1 }}
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        transition={{ duration: 0.15 }}
+                        className={`relative text-left px-3.5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase transition-colors flex items-center gap-2 cursor-pointer ${
+                          isActive ? 'text-white' : 'text-slate-300 hover:text-white hover:bg-white/5'
                         }`}
                       >
-                        <Icon className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                        <span className="truncate">{item.label}</span>
-                      </button>
+                        {isActive && (
+                          <motion.span
+                            layoutId="activeMobilePill"
+                            className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 shadow-[0_0_20px_rgba(249,115,22,0.4)] pointer-events-none"
+                            transition={PILL_SPRING}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <Icon className="relative z-10 w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span className="relative z-10 truncate">{item.label}</span>
+                      </motion.button>
                     );
                   })}
                 </div>
