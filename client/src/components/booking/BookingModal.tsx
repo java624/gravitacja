@@ -234,10 +234,13 @@ export default function BookingModal({ isOpen, onClose, initialLocation, initial
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl bg-slate-950/95 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(249,115,22,0.15)] z-10 text-white overflow-hidden my-auto"
+          className="relative w-full max-w-2xl bg-slate-950/95 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(249,115,22,0.15)] z-10 text-white overflow-visible my-auto"
         >
-          <div className="absolute -top-24 -right-24 w-60 h-60 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+          {/* Ambient Glows clipped to card boundary */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+            <div className="absolute -top-24 -right-24 w-60 h-60 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+          </div>
 
           <button
             onClick={handleClose}

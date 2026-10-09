@@ -1,5 +1,7 @@
-import { Calendar, Clock, Users, MapPin, Trophy, Dices } from 'lucide-react';
+import { Users, MapPin, Trophy, Dices, Clock } from 'lucide-react';
 import type { LocationSlug, ResourceType } from '../../types/booking';
+import CustomDatePicker from './CustomDatePicker';
+import CustomTimeSelect from './CustomTimeSelect';
 
 interface Step1TermSelectionProps {
   selectedLocation: LocationSlug;
@@ -45,12 +47,26 @@ export default function Step1TermSelection({
 }: Step1TermSelectionProps) {
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const handleStartTimeChange = (newStartTime: string) => {
+    setStartTime(newStartTime);
+    const startIdx = TIME_SLOTS.indexOf(newStartTime);
+    const endIdx = TIME_SLOTS.indexOf(endTime);
+    // Auto-calculate endTime if it's less than or equal to startTime
+    if (endIdx <= startIdx || endIdx === -1) {
+      const targetIdx = Math.min(startIdx + 2, TIME_SLOTS.length - 1);
+      const nextTime = TIME_SLOTS[targetIdx] || TIME_SLOTS[Math.min(startIdx + 1, TIME_SLOTS.length - 1)];
+      setEndTime(nextTime);
+    }
+  };
+
+  const availableEndTimes = TIME_SLOTS.filter((t) => t > startTime);
+
   return (
     <div className="space-y-5">
       {/* Location Picker */}
       <div>
         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <MapPin className="w-3.5 h-3.5 text-orange-400" /> Lokacja Centrum
+          <MapPin className="w-3.5 h-3.5 text-[#ff5500] drop-shadow-[0_0_8px_rgba(255,85,0,0.6)]" /> Lokacja Centrum
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {LOCATIONS.map((loc) => (
@@ -60,8 +76,8 @@ export default function Step1TermSelection({
               onClick={() => setSelectedLocation(loc.id)}
               className={`p-3 rounded-2xl border text-left transition-all text-xs font-bold cursor-pointer ${
                 selectedLocation === loc.id
-                  ? 'border-orange-500 bg-orange-500/15 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                  : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20 hover:text-white'
+                  ? 'border-[#ff5500] bg-[#ff5500]/15 text-white shadow-[0_0_15px_rgba(255,85,0,0.3)] ring-1 ring-[#ff5500]/50'
+                  : 'border-white/10 bg-[#111625]/60 text-slate-400 hover:border-white/20 hover:text-white'
               }`}
             >
               <div className="font-black text-sm uppercase">{loc.city}</div>
@@ -74,7 +90,7 @@ export default function Step1TermSelection({
       {/* Game Type Picker */}
       <div>
         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Trophy className="w-3.5 h-3.5 text-orange-400" /> Rodzaj Rozrywki
+          <Trophy className="w-3.5 h-3.5 text-[#ff5500] drop-shadow-[0_0_8px_rgba(255,85,0,0.6)]" /> Rodzaj Rozrywki
         </label>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -82,11 +98,11 @@ export default function Step1TermSelection({
             onClick={() => setResourceType('bowling')}
             className={`p-3.5 rounded-2xl border text-center font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${
               resourceType === 'bowling'
-                ? 'border-orange-500 bg-gradient-to-r from-orange-500/20 to-red-600/20 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
+                ? 'border-[#ff5500] bg-gradient-to-r from-[#ff5500]/25 to-red-600/25 text-white shadow-[0_0_15px_rgba(255,85,0,0.35)] ring-1 ring-[#ff5500]/50'
+                : 'border-white/10 bg-[#111625]/60 text-slate-400 hover:border-white/20'
             }`}
           >
-            <Dices className="w-4 h-4 text-orange-400" />
+            <Dices className="w-4 h-4 text-[#ff5500]" />
             <span>Bowling (Tory)</span>
           </button>
           <button
@@ -94,8 +110,8 @@ export default function Step1TermSelection({
             onClick={() => setResourceType('billiards')}
             className={`p-3.5 rounded-2xl border text-center font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${
               resourceType === 'billiards'
-                ? 'border-cyan-500 bg-cyan-500/20 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
+                ? 'border-cyan-500 bg-cyan-500/20 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-500/50'
+                : 'border-white/10 bg-[#111625]/60 text-slate-400 hover:border-white/20'
             }`}
           >
             <Trophy className="w-4 h-4 text-cyan-400" />
@@ -106,54 +122,32 @@ export default function Step1TermSelection({
 
       {/* Date & Time Selectors */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-orange-400" /> Data
-          </label>
-          <input
-            type="date"
-            min={todayStr}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
-          />
-        </div>
+        <CustomDatePicker
+          label="Data"
+          value={date}
+          minDate={todayStr}
+          onChange={(newDate) => setDate(newDate)}
+          placeholder="Wybierz termin"
+        />
 
-        <div>
-          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-orange-400" /> Od godziny
-          </label>
-          <select
-            value={startTime}
-            onChange={(e) => {
-              setStartTime(e.target.value);
-              const startIdx = TIME_SLOTS.indexOf(e.target.value);
-              if (startIdx !== -1 && startIdx + 2 < TIME_SLOTS.length) {
-                setEndTime(TIME_SLOTS[startIdx + 2]);
-              }
-            }}
-            className="w-full bg-slate-900 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
-          >
-            {TIME_SLOTS.slice(0, -1).map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+        <CustomTimeSelect
+          label="Od godziny"
+          value={startTime}
+          options={TIME_SLOTS.slice(0, -1)}
+          onChange={handleStartTimeChange}
+          placeholder="Start"
+          icon={<Clock className="w-3.5 h-3.5 text-[#ff5500] drop-shadow-[0_0_8px_rgba(255,85,0,0.6)]" />}
+        />
 
-        <div>
-          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-orange-400" /> Do godziny
-          </label>
-          <select
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-full bg-slate-900 border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 font-mono"
-          >
-            {TIME_SLOTS.filter(t => t > startTime).map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+        <CustomTimeSelect
+          label="Do godziny"
+          value={endTime}
+          options={availableEndTimes.length > 0 ? availableEndTimes : [startTime]}
+          minTime={startTime}
+          onChange={(newEndTime) => setEndTime(newEndTime)}
+          placeholder="Koniec"
+          icon={<Clock className="w-3.5 h-3.5 text-[#ff5500] drop-shadow-[0_0_8px_rgba(255,85,0,0.6)]" />}
+        />
       </div>
 
       {/* Guests Count */}
